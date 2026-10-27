@@ -109,6 +109,21 @@ export function cabecalhoAnexo(nome: string) {
 }
 
 /**
+ * Aceita só endereço https. Serve ao link da área do cliente, cujo destino
+ * vem de variável de ambiente: um valor com http, javascript: ou texto solto
+ * nunca vira href. Devolve o endereço normalizado, ou '' para "sem link".
+ */
+export function urlHttps(valor: unknown) {
+  if (typeof valor !== 'string' || valor.trim() === '') return '';
+  try {
+    const url = new URL(valor.trim());
+    return url.protocol === 'https:' ? url.toString() : '';
+  } catch {
+    return '';
+  }
+}
+
+/**
  * Quebra um título com <br> em linhas mascaradas, para a entrada linha a linha
  * do herói. É feito no servidor e não no navegador: se o site.js montasse as
  * linhas, o título apareceria inteiro, sumiria e entraria de novo.

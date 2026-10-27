@@ -11,7 +11,8 @@ import {
   assinaturaConfere,
   gerarProtocolo,
   hashIp,
-  linhasDeTitulo
+  linhasDeTitulo,
+  urlHttps
 } from './utils.js';
 
 test('limpar corta espaço das pontas e respeita o tamanho máximo', () => {
@@ -150,4 +151,15 @@ test('linhasDeTitulo vira uma linha mascarada por <br>', () => {
   assert.ok(!html.includes('<br>'));
   // título sem quebra continua sendo uma linha só
   assert.equal((linhasDeTitulo('Termos de uso').match(/class="linha"/g) ?? []).length, 1);
+});
+
+test('urlHttps só deixa passar endereço https', () => {
+  assert.equal(urlHttps('https://exemplo.com.br/'), 'https://exemplo.com.br/');
+  assert.equal(urlHttps('  https://exemplo.com.br  '), 'https://exemplo.com.br/');
+  // o que nunca pode virar href do menu
+  for (const ruim of ['http://exemplo.com.br', 'javascript:alert(1)', 'data:text/html,x', '//exemplo.com.br', 'exemplo.com.br', 'ftp://exemplo.com.br', '']) {
+    assert.equal(urlHttps(ruim), '', `deveria recusar: ${ruim}`);
+  }
+  assert.equal(urlHttps(undefined), '');
+  assert.equal(urlHttps(42 as unknown as string), '');
 });

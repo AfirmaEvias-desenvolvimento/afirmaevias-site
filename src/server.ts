@@ -65,6 +65,7 @@ await app.register(view, {
   viewExt: 'ejs',
   defaultContext: {
     siteUrl: config.siteUrl,
+    portalClienteUrl: config.portalClienteUrl,
     navegacao: conteudo.navegacao,
     empresa: conteudo.empresa,
     cookiesCategorias: conteudo.cookies.categorias,

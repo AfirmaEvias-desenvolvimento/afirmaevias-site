@@ -23,6 +23,7 @@
       <ul class="rodape__lista rodape__lista--chips">
         <li><a href="<%= empresa.linkedin %>" target="_blank" rel="noopener"><svg class="icone" aria-hidden="true"><use href="#i-linkedin"/></svg>LinkedIn</a></li>
         <li><a href="<%= empresa.instagram %>" target="_blank" rel="noopener"><svg class="icone" aria-hidden="true"><use href="#i-instagram"/></svg>Instagram</a></li>
+        <% if (portalClienteUrl) { %><li><a href="<%= portalClienteUrl %>" rel="noopener noreferrer">Área do cliente</a></li><% } %>
         <li><a href="/trabalhe-com-a-gente">Trabalhe com a gente</a></li>
         <li><a href="/programa-de-integridade#canal">Canal de denúncias</a></li>
       </ul>

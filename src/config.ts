@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { urlHttps } from './utils.js';
 
 const requerido = (chave: string, padrao?: string) => {
   const valor = process.env[chave] ?? padrao;
@@ -33,6 +34,14 @@ export const config = {
   databaseUrl: requerido('DATABASE_URL'),
   sessionSecret: segredoSessao,
   siteUrl: process.env.SITE_URL ?? 'https://www.afirmaevias.com.br',
+  // Área do cliente: portal do sistema Comercial, onde o cliente se cadastra e
+  // faz o pedido. O site só linka; não embute nem compartilha sessão. O
+  // endereço vai mudar, então a variável PORTAL_CLIENTE_URL manda: trocar no
+  // Railway basta. Variável definida e vazia desliga o link. Só aceita https.
+  portalClienteUrl:
+    process.env.PORTAL_CLIENTE_URL === undefined
+      ? 'https://aevias-comercial-production.up.railway.app/'
+      : urlHttps(process.env.PORTAL_CLIENTE_URL),
   admin: {
     email: process.env.ADMIN_EMAIL ?? '',
     senha: process.env.ADMIN_PASSWORD ?? '',

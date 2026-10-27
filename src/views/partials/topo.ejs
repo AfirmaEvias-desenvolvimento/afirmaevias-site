@@ -70,6 +70,7 @@
       <% navegacao.forEach(function (item) { %>
         <a href="<%= item.href %>" class="navegacao__link <%= rotaAtual === item.href ? 'is-atual' : '' %>"<%= rotaAtual === item.href ? ' aria-current="page"' : '' %>><%= item.rotulo %></a>
       <% }); %>
+      <% if (portalClienteUrl) { %><a class="navegacao__link navegacao__link--cliente" href="<%= portalClienteUrl %>" rel="noopener noreferrer">Área do cliente</a><% } %>
       <a class="botao botao--claro navegacao__cta" href="https://wa.me/<%= empresa.whatsapp %>" target="_blank" rel="noopener">Falar agora</a>
       <%# so aparece no menu do celular, onde o rodape fica longe %>
       <div class="navegacao__extra">
