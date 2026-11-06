@@ -5,6 +5,7 @@ import * as conteudo from '../content.js';
 import { assinaturaConfere, emailValido, gerarProtocolo, hashIp, limpar } from '../utils.js';
 import { registrarAuditoria } from '../audit.js';
 import { avisarEquipe } from '../notificacoes.js';
+import { chaveDoContato, comercialLigado, processarFilaComercial } from '../comercial-fila.js';
 
 const limite = { config: { rateLimit: { max: 8, timeWindow: '10 minutes' } } };
 
@@ -18,6 +19,7 @@ export async function rotasFormularios(app: FastifyInstance) {
       email: limpar(corpo.email, 200),
       telefone: limpar(corpo.telefone, 40),
       empresa: limpar(corpo.empresa, 160),
+      cnpj: limpar(corpo.cnpj, 24),
       assunto: limpar(corpo.assunto, 160),
       mensagem: limpar(corpo.mensagem, 5000)
     };
@@ -32,6 +34,8 @@ export async function rotasFormularios(app: FastifyInstance) {
     if (!valores.nome) erros.push('Escreva seu nome.');
     if (!emailValido(valores.email)) erros.push('Confira o e-mail digitado.');
     if (valores.mensagem.length < 10) erros.push('Conte um pouco mais sobre o que você precisa.');
+    // CNPJ é opcional; se preenchido, precisa ter os 14 dígitos (a conferência dos dígitos verificadores é do Comercial)
+    if (valores.cnpj && valores.cnpj.replace(/\D/g, '').length !== 14) erros.push('Confira o CNPJ: são 14 números.');
     if (!consentimento) erros.push('Marque o aceite da Política de Privacidade para enviarmos sua mensagem.');
 
     const pagina = origem === 'home' ? 'pages/contato' : 'pages/contato';
@@ -47,23 +51,37 @@ export async function rotasFormularios(app: FastifyInstance) {
       });
     }
 
+    // Conexão 1 (Institucional → Comercial): com a integração ligada, a linha da fila nasce na MESMA instrução que grava o
+    // contato (CTE), então não há contato sem fila nem fila sem contato. Desligada, a segunda parte não insere nada e o
+    // site se comporta como antes. O envio em si é assíncrono (comercial-fila.ts): o Comercial fora do ar não atrasa nem
+    // derruba a resposta ao visitante.
+    const ligado = comercialLigado();
     await consultar(
-      `INSERT INTO contatos (nome, sobrenome, email, telefone, empresa, assunto, mensagem, origem, consentimento, ip, user_agent)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      `WITH novo AS (
+         INSERT INTO contatos (nome, sobrenome, email, telefone, empresa, cnpj, assunto, mensagem, origem, consentimento, ip, user_agent)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id
+       )
+       INSERT INTO leads_comercial (contato_id, chave, privacidade_versao)
+       SELECT id, $13 || id::text, $14 FROM novo WHERE $15::boolean`,
       [
         valores.nome,
         valores.sobrenome,
         valores.email,
         valores.telefone,
         valores.empresa,
+        valores.cnpj.replace(/\D/g, '') || null,
         valores.assunto,
         valores.mensagem,
         origem,
         consentimento,
         request.ip,
-        String(request.headers['user-agent'] ?? '').slice(0, 400)
+        String(request.headers['user-agent'] ?? '').slice(0, 400),
+        chaveDoContato(''),
+        config.versaoPolitica,
+        ligado
       ]
     );
+    if (ligado) void processarFilaComercial();
 
     void avisarEquipe({
       tipo: 'contato',

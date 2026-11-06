@@ -13,7 +13,8 @@
     "migrate": "node dist/migrate.js",
     "migrate:dev": "tsx src/migrate.ts",
     "postbuild": "node -e \"require('fs').cpSync('src/views','dist/views',{recursive:true})\"",
-    "test": "tsc -p tsconfig.json && node --test \"dist/**/*.test.js\""
+    "test": "tsc -p tsconfig.json && node --test \"dist/**/*.test.js\"",
+    "e2e:conexao-1": "node scripts/e2e-conexao-1.mjs"
   },
   "dependencies": {
     "@fastify/compress": "^9.2.0",

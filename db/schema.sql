@@ -47,6 +47,30 @@ CREATE TABLE IF NOT EXISTS contatos (
 CREATE INDEX IF NOT EXISTS idx_contatos_criado ON contatos (criado_em DESC);
 CREATE INDEX IF NOT EXISTS idx_contatos_status ON contatos (status);
 
+-- CNPJ opcional do formulario de contato (so digitos). Vai ao Comercial como dado de empresa.
+ALTER TABLE contatos ADD COLUMN IF NOT EXISTS cnpj TEXT;
+
+-- Fila de saida dos contatos para o Comercial (conexao 1, C12). So existe linha quando a integracao esta ligada
+-- (COMERCIAL_API_URL). Guarda estado de entrega, nunca copia dado pessoal: o corpo e montado de contatos no envio.
+-- ON DELETE CASCADE: apagar o contato (retencao de 24 meses, painel, LGPD) apaga a fila dele.
+CREATE TABLE IF NOT EXISTS leads_comercial (
+  id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  contato_id         UUID        NOT NULL UNIQUE REFERENCES contatos(id) ON DELETE CASCADE,
+  chave              TEXT        NOT NULL UNIQUE,
+  privacidade_versao TEXT        NOT NULL,
+  status             TEXT        NOT NULL DEFAULT 'pendente',
+  tentativas         INTEGER     NOT NULL DEFAULT 0,
+  proxima_tentativa  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  ultimo_http        INTEGER,
+  ultimo_codigo      TEXT,
+  lead_id            UUID,
+  estado             TEXT,
+  enviado_em         TIMESTAMPTZ,
+  criado_em          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  atualizado_em      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_leads_comercial_fila ON leads_comercial (proxima_tentativa) WHERE status = 'pendente';
+
 CREATE TABLE IF NOT EXISTS candidaturas (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   nome            TEXT        NOT NULL,

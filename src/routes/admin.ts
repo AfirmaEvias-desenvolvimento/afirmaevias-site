@@ -58,6 +58,7 @@ export const colecoes: Record<string, Colecao> = {
       { campo: 'email', rotulo: 'E-mail' },
       { campo: 'telefone', rotulo: 'Telefone' },
       { campo: 'empresa', rotulo: 'Empresa' },
+      { campo: 'cnpj', rotulo: 'CNPJ' },
       { campo: 'assunto', rotulo: 'Assunto' },
       { campo: 'mensagem', rotulo: 'Mensagem', tipo: 'longo' },
       { campo: 'origem', rotulo: 'Página de origem' },

@@ -76,10 +76,15 @@
             <input type="text" name="empresa" autocomplete="organization" maxlength="160" value="<%= valores.empresa || '' %>">
           </label>
           <label class="campo">
-            <span class="campo__rotulo">Assunto</span>
-            <input type="text" name="assunto" maxlength="160" value="<%= valores.assunto || '' %>">
+            <span class="campo__rotulo">CNPJ (opcional)</span>
+            <input type="text" name="cnpj" inputmode="numeric" maxlength="24" value="<%= valores.cnpj || '' %>">
           </label>
         </div>
+
+        <label class="campo">
+          <span class="campo__rotulo">Assunto</span>
+          <input type="text" name="assunto" maxlength="160" value="<%= valores.assunto || '' %>">
+        </label>
 
         <label class="campo">
           <span class="campo__rotulo">Como podemos ajudar?</span>

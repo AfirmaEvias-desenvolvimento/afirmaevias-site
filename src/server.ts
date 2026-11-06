@@ -14,6 +14,7 @@ import * as conteudo from './content.js';
 import { pool } from './db.js';
 import { limparSessoesExpiradas } from './auth.js';
 import { aplicarRetencao } from './retencao.js';
+import { iniciarFilaComercial } from './comercial-fila.js';
 import { asset } from './assets.js';
 import { dadosEstruturados } from './seo.js';
 import { linhasDeTitulo } from './utils.js';
@@ -162,6 +163,9 @@ setInterval(() => {
   aplicarRetencao().catch(() => {});
 }, 24 * 60 * 60 * 1000).unref();
 aplicarRetencao().catch(() => {});
+
+// Conexão 1 (Institucional → Comercial): reenvia os leads pendentes. Não faz nada sem COMERCIAL_API_URL.
+iniciarFilaComercial();
 
 // O Railway manda SIGTERM a cada redeploy. Sem tratar, a requisicao que estava
 // no meio do caminho e cortada e o pool do Postgres morre com o processo, sem
