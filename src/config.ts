@@ -47,7 +47,9 @@ export const config = {
     senha: process.env.ADMIN_PASSWORD ?? '',
     nome: process.env.ADMIN_NOME ?? 'Administrador'
   },
-  versaoPolitica: '2026-10-20',
+  // Versão do aviso de privacidade aceito (AAAA-MM-DD, = data de content.ts privacidade.atualizadoEm). Vai como
+  // privacy_version no lead do Comercial e na prova de consentimento de cookies.
+  versaoPolitica: '2026-11-06',
   uploadMaximoBytes: 5 * 1024 * 1024
 };
 

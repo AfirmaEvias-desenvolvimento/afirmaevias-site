@@ -26,6 +26,8 @@ já criadas.
 | `admin_sessoes` | Token, usuário, IP, navegador e expiração | FK para usuário; exclusão em cascata |
 | `tentativas_login` | E-mail digitado, IP e data | Freio temporário por conta |
 | `contatos` | Identificação, mensagem, origem, aceite, status, observação e dados técnicos | Sem vínculo com contas externas |
+| `leads_comercial` | Estado de entrega do contato ao Comercial (chave, tentativas, `lead_id` devolvido) | Só com a integração ligada; sem cópia dos dados do contato; cascata com `contatos` (ver `docs/hipersistema/conexao-1-comercial.md`) |
+| `eliminacoes_comercial` | `lead_id`, datas, origem, status e UUIDs de operadores | Pendência de eliminar no Comercial o lead de contato já apagado; sem dado pessoal; criada por gatilho em `contatos` |
 | `candidaturas` | Identificação, área, mensagem, aceite, status e arquivo | Currículo em `arquivo_dados BYTEA` |
 | `relatos_integridade` | Protocolo, categoria, texto, anonimato, identificação opcional e resposta | Não possui colunas de IP ou navegador |
 | `solicitacoes_lgpd` | Protocolo, tipo, identificação, documento opcional, detalhes, resposta e prazo | Guarda o IP do envio |
@@ -52,7 +54,7 @@ provedores. O repositório não contém rotina de backup/restauração do banco.
 | Dados | Regra automática |
 |---|---|
 | Candidaturas e currículo | Exclui após 12 meses de `criado_em` |
-| Contatos | Exclui após 24 meses de `criado_em` |
+| Contatos | Exclui após 24 meses de `criado_em`; se o lead já tinha sido entregue ao Comercial, o gatilho cria a pendência em `eliminacoes_comercial` (a eliminação lá é manual) |
 | IP e user-agent de contatos e candidaturas | Define NULL após 6 meses, nas linhas cujo IP ainda não é NULL |
 | Solicitações LGPD | Exclui após 5 anos de `criado_em` |
 | Consentimentos | Exclui após 5 anos de `criado_em` |

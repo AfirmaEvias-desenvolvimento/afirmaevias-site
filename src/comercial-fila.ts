@@ -12,6 +12,7 @@ import {
   type ConfigComercial,
   type Transporte
 } from './comercial.js';
+import { registrarPendenciaOrfa } from './eliminacao-comercial.js';
 
 let cfg: ConfigComercial | null | undefined;
 /** Configuração lida uma vez (e o aviso de má configuração sai uma vez só). */
@@ -57,15 +58,19 @@ export async function processarFilaComercial(limite = 20, transporte?: Transport
         // sem dado pessoal no log: só o que identifica a linha da fila e o motivo
         if (r.alerta) console.error(JSON.stringify({ codigo: `comercial_lead_${r.codigo}`, http: r.http, fila: linha.id }));
         const tentativas = linha.tentativas + 1;
-        await consultar(
+        const gravadas = await consultar(
           `UPDATE leads_comercial SET status = $2, tentativas = $3, ultimo_http = $4, ultimo_codigo = $5,
                   lead_id = COALESCE($6, lead_id), estado = COALESCE($7, estado),
                   enviado_em = CASE WHEN $2 = 'enviado' THEN now() ELSE enviado_em END,
                   proxima_tentativa = CASE WHEN $2 = 'pendente' THEN now() + $8 * interval '1 second' ELSE proxima_tentativa END,
                   atualizado_em = now()
-            WHERE id = $1`,
+            WHERE id = $1
+        RETURNING id`,
           [linha.id, r.status, tentativas, r.http, r.codigo, r.lead_id, r.estado, recuoSegundos(tentativas, r.lento)]
         );
+        // o contato foi apagado durante o envio (a fila sumiu em cascata) e o Comercial JÁ aceitou o lead: o gatilho do
+        // banco não conheceu esse lead_id, então a pendência de eliminação lá é registrada aqui (LGPD)
+        if (gravadas.length === 0 && r.lead_id) await registrarPendenciaOrfa(r.lead_id);
         resumo[r.status]++;
       } catch (falha) {
         // erro de banco numa linha não derruba as outras; a reserva de 2 min a recoloca na fila sozinha

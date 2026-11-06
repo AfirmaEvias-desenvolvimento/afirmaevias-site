@@ -73,7 +73,7 @@
     <% if (usuario.papel === 'admin') { %>
       <section class="cartao-admin cartao-admin--perigo">
         <h2 class="cartao-admin__titulo">Excluir registro</h2>
-        <p class="secundario">Use para atender pedido de eliminação da LGPD. A exclusão é definitiva e fica registrada na trilha de auditoria.</p>
+        <p class="secundario">Use para atender pedido de eliminação da LGPD. A exclusão é definitiva e fica registrada na trilha de auditoria.<% if (colecao.chave === 'contatos') { %> Se o pedido já tiver sido enviado ao Comercial, o site anota uma pendência para o responsável de lá eliminá-lo também (menu "Eliminações no Comercial").<% } %></p>
         <form method="post" action="/admin/dados/<%= colecao.chave %>/<%= registro.id %>/excluir" onsubmit="return confirm('Excluir este registro em definitivo?')">
           <button type="submit" class="botao-admin botao-admin--perigo">Excluir em definitivo</button>
         </form>

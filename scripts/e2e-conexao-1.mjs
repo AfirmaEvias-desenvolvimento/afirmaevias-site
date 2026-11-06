@@ -197,7 +197,7 @@ try {
   await hq.connect();
   const hsq = async (sql, p) => (await hq.query(sql, p)).rows;
   const lead = (await hsq(`select * from leads where id = $1`, [entregue.lead_id]))[0];
-  ok('o lead existe no banco do Comercial com os campos do contrato', lead?.empresa === 'Construtora E2E Ltda' && lead.contato_email === EMAIL && lead.contato_nome === `${NOME} Prova` && lead.contato_telefone === '(41) 99999-0001' && lead.servico_interesse === 'Controle tecnológico' && /orçamento para controle/.test(lead.mensagem) && lead.privacidade_versao === '2026-10-20', `${lead?.empresa} / ${lead?.privacidade_versao}`);
+  ok('o lead existe no banco do Comercial com os campos do contrato', lead?.empresa === 'Construtora E2E Ltda' && lead.contato_email === EMAIL && lead.contato_nome === `${NOME} Prova` && lead.contato_telefone === '(41) 99999-0001' && lead.servico_interesse === 'Controle tecnológico' && /orçamento para controle/.test(lead.mensagem) && lead.privacidade_versao === '2026-11-06', `${lead?.empresa} / ${lead?.privacidade_versao}`);
   ok('CNPJ chegou formatado e a origem é "institucional", status "nova"', lead?.cnpj === '11.222.333/0001-81' && lead.origem === 'institucional' && lead.status === 'nova', `${lead?.cnpj} ${lead?.origem} ${lead?.status}`);
   const colunasLead = Object.keys(lead ?? {});
   ok('nada além do contrato foi parar no lead (sem IP/navegador do visitante)', !JSON.stringify(lead).includes('127.0.0.1') && !colunasLead.some((c) => /^(ip|user_agent)$/.test(c)), colunasLead.join(','));
@@ -213,7 +213,7 @@ try {
   ok('segue 1 só lead no Comercial para essa chave', nLeads === 1, `n=${nLeads}`);
 
   titulo('F. Protocolo cru contra o listener do HS (identidade institucional-api)');
-  const corpo = { empresa: 'Empresa Cru E2E Ltda', cnpj: '07.526.557/0001-00', contato: { nome: 'Joao Cru', email: `cru-${EMAIL}`, telefone: '(41) 3333-0000' }, servico_interesse: 'Dosagem', mensagem: 'Teste cru do protocolo.', privacy_version: '2026-10-20' };
+  const corpo = { empresa: 'Empresa Cru E2E Ltda', cnpj: '07.526.557/0001-00', contato: { nome: 'Joao Cru', email: `cru-${EMAIL}`, telefone: '(41) 3333-0000' }, servico_interesse: 'Dosagem', mensagem: 'Teste cru do protocolo.', privacy_version: '2026-11-06' };
   const chave = `cru:${randomUUID()}`;
   const c1 = await cru('institucional', 'POST', LEADS, corpo, { 'idempotency-key': chave });
   ok('lead novo: 201 (ou 202 se a empresa precisa de análise) com lead_id', (c1.status === 201 || c1.status === 202) && !!c1.corpo?.lead_id, `HTTP ${c1.status} ${JSON.stringify(c1.corpo)}`);

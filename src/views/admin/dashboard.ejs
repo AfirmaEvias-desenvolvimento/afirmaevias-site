@@ -17,6 +17,13 @@
     </div>
   <% } %>
 
+  <% if (metricas.eliminacoesComercial > 0) { %>
+    <div class="faixa-alerta">
+      <strong><%= metricas.eliminacoesComercial %></strong> lead(s) já entregue(s) ao Comercial aguardam eliminação por lá (contato apagado no site).
+      <a href="/admin/eliminacoes-comercial">Ver pendências</a>
+    </div>
+  <% } %>
+
   <section class="grade-metricas">
     <a class="metrica" href="/admin/dados/contatos?status=novo">
       <p class="metrica__rotulo">Contatos novos</p>

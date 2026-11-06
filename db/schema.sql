@@ -179,3 +179,41 @@ CREATE TABLE IF NOT EXISTS tentativas_login (
   criado_em       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_tentativas_email ON tentativas_login (email, criado_em DESC);
+
+-- ------------------------------------------------- eliminacao no Comercial
+-- O Comercial (C12) nao tem exclusao de lead: quando o site apaga um contato cujo lead JA foi entregue, o lead continua la.
+-- Esta tabela e a PENDENCIA que obriga um humano do Comercial a elimina-lo pelo painel dele e a marcar aqui como concluida.
+-- Nao guarda dado pessoal de proposito: so o id do lead devolvido pelo Comercial (UUID opaco), datas, origem, status e o id
+-- (UUID) de quem agiu no painel. Nome, e-mail, telefone, CNPJ e mensagem NUNCA entram aqui (ha teste cobrando).
+CREATE TABLE IF NOT EXISTS eliminacoes_comercial (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  lead_id          UUID        NOT NULL UNIQUE,
+  pedido_em        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  origem           TEXT        NOT NULL CHECK (origem IN ('painel', 'retencao')),
+  registrado_por   UUID        REFERENCES admin_usuarios(id) ON DELETE SET NULL,
+  status           TEXT        NOT NULL DEFAULT 'pendente' CHECK (status IN ('pendente', 'concluida')),
+  concluida_em     TIMESTAMPTZ,
+  concluida_por    UUID        REFERENCES admin_usuarios(id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_elim_comercial_status ON eliminacoes_comercial (status, pedido_em);
+
+-- Registra a pendencia NA MESMA transacao e ANTES de o contato sumir, por qualquer caminho (painel, retencao de 24 meses,
+-- SQL manual). So existe pendencia quando o lead foi entregue (lead_id preenchido); fila pendente/rejeitada nao gera nada.
+-- Quem apagou vem das variaveis de sessao 'site.eliminacao_origem' / 'site.eliminacao_por' (definidas so pelo painel, via
+-- set_config local a transacao); sem elas e a retencao automatica.
+CREATE OR REPLACE FUNCTION registrar_eliminacao_comercial() RETURNS trigger AS $fn$
+BEGIN
+  INSERT INTO eliminacoes_comercial (lead_id, origem, registrado_por)
+  SELECT l.lead_id,
+         CASE WHEN current_setting('site.eliminacao_origem', true) = 'painel' THEN 'painel' ELSE 'retencao' END,
+         NULLIF(current_setting('site.eliminacao_por', true), '')::uuid
+    FROM leads_comercial l
+   WHERE l.contato_id = OLD.id AND l.lead_id IS NOT NULL
+  ON CONFLICT (lead_id) DO NOTHING;
+  RETURN OLD;
+END
+$fn$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS contatos_eliminacao_comercial ON contatos;
+CREATE TRIGGER contatos_eliminacao_comercial BEFORE DELETE ON contatos
+  FOR EACH ROW EXECUTE FUNCTION registrar_eliminacao_comercial();

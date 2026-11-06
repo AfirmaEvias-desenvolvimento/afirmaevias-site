@@ -531,9 +531,13 @@ export const vagas = {
 };
 
 // -------------------------------------------------------------------- LGPD
+// TEXTO PROPOSTO, REVISAR COM O JURÍDICO (versão 1.2, 06/11/2026): acrescenta o compartilhamento do contato/orçamento com o
+// sistema comercial da própria Afirma E-vias (conexão 1 do hipersistema). A data abaixo e config.versaoPolitica
+// (AAAA-MM-DD) andam juntas: o teste comercial-privacidade.test.ts cobra a correspondência, porque é config.versaoPolitica
+// que vai como privacy_version no lead entregue ao Comercial e como versão do consentimento de cookies.
 export const privacidade = {
-  atualizadoEm: '20 de outubro de 2026',
-  versao: '1.1',
+  atualizadoEm: '6 de novembro de 2026',
+  versao: '1.2',
   secoes: [
     {
       titulo: 'Quem somos e a quem esta política se aplica',
@@ -545,7 +549,7 @@ export const privacidade = {
     {
       titulo: 'Quais dados coletamos',
       lista: [
-        'Dados de contato que você digita nos formulários: nome, sobrenome, e-mail, telefone, empresa e o conteúdo da mensagem.',
+        'Dados de contato e de pedido de orçamento que você digita nos formulários: nome, sobrenome, e-mail, telefone, empresa, CNPJ (opcional), assunto e o conteúdo da mensagem.',
         'Currículo enviado na página Trabalhe com a gente, incluindo os dados que você optar por incluir no arquivo.',
         'Dados de requisição de titular: nome, e-mail e, opcionalmente, CPF — que pedimos apenas para localizar seus registros e confirmar que a requisição é sua.',
         'Relatos de integridade, que podem ser enviados de forma totalmente anônima.',
@@ -573,9 +577,18 @@ export const privacidade = {
       ]
     },
     {
+      titulo: 'Seu pedido de contato ou de orçamento e o sistema comercial da Afirma E-vias',
+      paragrafos: [
+        'Quando você envia o formulário de contato ou de orçamento, os dados que você preencheu — nome, e-mail, telefone, empresa, CNPJ, assunto e mensagem — ficam registrados neste site e são enviados, de forma protegida, ao sistema comercial da própria Afirma E-vias, para que nossa equipe comercial atenda a sua solicitação e elabore a proposta. Esse sistema pertence à Afirma E-vias, que continua sendo a controladora desses dados: não se trata de envio a outra empresa.',
+        'Usamos esses dados somente para essa finalidade (responder o seu pedido, esclarecer o escopo e preparar a proposta) e para registrar o histórico do atendimento. A base legal é a execução de procedimentos preliminares relacionados a contrato, a pedido do titular (art. 7º, V). Não usamos esses dados para publicidade de terceiros nem os vendemos.',
+        'No sistema comercial, o seu pedido é guardado pelo mesmo prazo de 24 meses aplicado neste site, contado do recebimento do formulário. Se o pedido evoluir para uma proposta ou um contrato, os dados passam a ser tratados também para a execução desse contrato e para o cumprimento das obrigações legais dele, com os prazos próprios que a lei exige.',
+        'Você pode pedir acesso, correção, eliminação, oposição ou qualquer outro direito do art. 18 pelo Portal do titular. O pedido de eliminação alcança também a cópia mantida no sistema comercial: nossa equipe providencia a eliminação nos dois lugares, ressalvados os dados que precisemos manter por obrigação legal ou para o exercício regular de direitos em contrato já firmado.'
+      ]
+    },
+    {
       titulo: 'Por que tratamos seus dados e com qual base legal',
       lista: [
-        'Responder contatos comerciais e enviar propostas — execução de procedimentos preliminares a contrato (art. 7º, V).',
+        'Responder contatos comerciais e enviar propostas, o que inclui registrar o pedido no sistema comercial da Afirma E-vias — execução de procedimentos preliminares a contrato (art. 7º, V).',
         'Avaliar candidaturas em processos seletivos — execução de procedimentos preliminares a contrato (art. 7º, V).',
         'Atender requisições de titulares e comprovar conformidade — cumprimento de obrigação legal (art. 7º, II).',
         'Apurar relatos de integridade — legítimo interesse na manutenção do programa de compliance (art. 7º, IX).',
@@ -586,14 +599,14 @@ export const privacidade = {
     {
       titulo: 'Com quem compartilhamos',
       paragrafos: [
-        'Não vendemos dados pessoais. Compartilhamos apenas o necessário com: provedores de infraestrutura e hospedagem que operam sob contrato de tratamento (hoje, a Railway, que hospeda o site e o banco de dados, e a Resend, que entrega os avisos por e-mail à nossa equipe — esses avisos informam que chegou uma mensagem, mas não trazem o conteúdo dela); a empresa independente que opera nosso canal de denúncias; e autoridades públicas, quando houver requisição legal.',
+        'Não vendemos dados pessoais. Dentro da própria Afirma E-vias, o contato e o pedido de orçamento seguem para o sistema comercial da empresa, como explicado acima. Fora dela, compartilhamos apenas o necessário com: provedores de infraestrutura e hospedagem que operam sob contrato de tratamento (hoje, a Railway, que hospeda o site e o banco de dados, e a Resend, que entrega os avisos por e-mail à nossa equipe — esses avisos informam que chegou uma mensagem, mas não trazem o conteúdo dela); a empresa independente que opera nosso canal de denúncias; e autoridades públicas, quando houver requisição legal.',
         'Nossos servidores de aplicação e banco de dados podem estar localizados fora do Brasil. Nessas hipóteses, a transferência internacional observa o art. 33 da LGPD e é acompanhada de cláusulas contratuais de proteção.'
       ]
     },
     {
       titulo: 'Por quanto tempo guardamos',
       lista: [
-        'Contatos comerciais: 24 meses após o último contato.',
+        'Contatos comerciais: 24 meses contados do recebimento do formulário, também na cópia mantida no sistema comercial da Afirma E-vias (se o pedido virar proposta ou contrato, valem ainda os prazos próprios do contrato e das obrigações legais).',
         'Currículos: 12 meses, salvo se você pedir a exclusão antes.',
         'Requisições de titular e registros de consentimento: 5 anos, para prova de conformidade.',
         'Relatos de integridade: pelo prazo da apuração e mais 5 anos.',
