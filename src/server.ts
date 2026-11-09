@@ -205,8 +205,8 @@ for (const sinal of ['SIGTERM', 'SIGINT'] as const) {
 }
 
 try {
-  await app.listen({ port: config.porta, host: '0.0.0.0' });
-  console.log(`site no ar em http://0.0.0.0:${config.porta}`);
+  await app.listen({ port: config.porta, host: process.env.HOST ?? '0.0.0.0' });
+  console.log(`site no ar em http://${process.env.HOST ?? '0.0.0.0'}:${config.porta}`);
 } catch (erro) {
   app.log.error(erro);
   process.exit(1);
