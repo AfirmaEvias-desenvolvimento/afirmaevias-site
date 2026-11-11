@@ -217,3 +217,172 @@ $fn$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS contatos_eliminacao_comercial ON contatos;
 CREATE TRIGGER contatos_eliminacao_comercial BEFORE DELETE ON contatos
   FOR EACH ROW EXECUTE FUNCTION registrar_eliminacao_comercial();
+
+-- ===================================================================================================================
+-- Produtor de feed para o RH (origem 'institucional', contrato AEVIAS-HIPERSISTEMA-1.0, stream workforce_activity).
+-- O outbox e gravado POR TRIGGER, na mesma transacao da mudanca (candidaturas e auditoria do painel), para cobrir todo
+-- caminho de escrita (painel, formulario, retencao, SQL manual). Contador de sequencia sob row lock mantido ate o commit:
+-- a ordem do cursor e a ordem de commit. LGPD: o evento NUNCA leva nome, e-mail, telefone, mensagem, IP, curriculo nem
+-- texto livre; so ids opacos, estado, area (apenas se for uma das areas publicadas), versao do aviso e referencia de aceite.
+-- ===================================================================================================================
+CREATE TABLE IF NOT EXISTS integracao_stream (
+  stream          TEXT   PRIMARY KEY,
+  sequence        BIGINT NOT NULL DEFAULT 0,
+  retained_after  BIGINT NOT NULL DEFAULT 0
+);
+INSERT INTO integracao_stream (stream) VALUES ('workforce_activity') ON CONFLICT DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS integracao_outbox (
+  sequence      BIGINT      PRIMARY KEY,
+  aggregate_id  TEXT        NOT NULL,
+  event         JSONB       NOT NULL,
+  criado_em     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_integracao_outbox_criado ON integracao_outbox (criado_em);
+
+-- Maior aggregate_version por agregado; sobrevive a exclusao como barreira tecnica (sem dado pessoal) contra ressurreicao.
+CREATE TABLE IF NOT EXISTS integracao_versoes (
+  aggregate_id  TEXT    PRIMARY KEY,
+  version       INTEGER NOT NULL,
+  deleted       BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE TABLE IF NOT EXISTS integracao_snapshots (
+  id              UUID        PRIMARY KEY,
+  consumer        TEXT        NOT NULL,
+  operation_key   TEXT        NOT NULL,
+  request_hash    TEXT        NOT NULL,
+  request_id      UUID        NOT NULL,
+  high_watermark  BIGINT      NOT NULL,
+  expires_at      TIMESTAMPTZ NOT NULL,
+  criado_em       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (consumer, operation_key)
+);
+CREATE TABLE IF NOT EXISTS integracao_snapshot_itens (
+  snapshot_id   UUID  NOT NULL REFERENCES integracao_snapshots (id) ON DELETE CASCADE,
+  aggregate_id  TEXT  NOT NULL,
+  event         JSONB NOT NULL,
+  PRIMARY KEY (snapshot_id, aggregate_id)
+);
+CREATE INDEX IF NOT EXISTS idx_integracao_snap_itens_agg ON integracao_snapshot_itens (aggregate_id);
+
+-- Configuracao publicada pela aplicacao a cada migrate: versao do aviso de privacidade vigente e areas de vaga publicadas.
+CREATE TABLE IF NOT EXISTS integracao_config (chave TEXT PRIMARY KEY, valor TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS integracao_areas (slug TEXT PRIMARY KEY);
+
+CREATE OR REPLACE FUNCTION integracao_slug(t TEXT) RETURNS TEXT AS $fn$
+  SELECT left(trim(both '-' from regexp_replace(lower(translate(coalesce(t, ''),
+    'áàâãäéèêëíìîïóòôõöúùûüçñÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑ', 'aaaaaeeeeiiiiooooouuuucnaaaaaeeeeiiiiooooouuuucn')),
+    '[^a-z0-9]+', '-', 'g')), 64)
+$fn$ LANGUAGE sql IMMUTABLE;
+
+-- Status do painel -> enum do contrato (received|screening|linked|closed|withdrawn). 'banco de talentos' encerra a
+-- selecao (nao ha vinculo a vaga/pessoa), por isso 'closed'; nenhum fluxo do site gera 'withdrawn' nem 'linked'.
+CREATE OR REPLACE FUNCTION integracao_status_candidatura(s TEXT) RETURNS TEXT AS $fn$
+  SELECT CASE s WHEN 'em análise' THEN 'screening' WHEN 'entrevista' THEN 'screening'
+                WHEN 'banco de talentos' THEN 'closed' WHEN 'descartado' THEN 'closed' ELSE 'received' END
+$fn$ LANGUAGE sql IMMUTABLE;
+
+-- Area do formulario so sai se for uma area publicada (o campo e texto livre no servidor); senao null.
+CREATE OR REPLACE FUNCTION integracao_area(a TEXT) RETURNS TEXT AS $fn$
+  SELECT (SELECT slug FROM integracao_areas WHERE slug = integracao_slug(a))
+$fn$ LANGUAGE sql STABLE;
+
+-- Acao do painel -> {categoria, acao} do contrato; null = nao entra no feed (login, senha, usuarios, relatos, LGPD...).
+CREATE OR REPLACE FUNCTION integracao_admin_acao(p_acao TEXT, p_entidade TEXT) RETURNS TEXT[] AS $fn$
+  SELECT CASE
+    WHEN p_entidade = 'candidaturas' AND p_acao = 'registro.atualizado' THEN ARRAY['recruitment', 'updated']
+    WHEN p_entidade = 'candidaturas' AND p_acao = 'registro.excluido'   THEN ARRAY['recruitment', 'closed']
+    WHEN p_entidade = 'contatos'     AND p_acao = 'registro.atualizado' THEN ARRAY['general_service', 'updated']
+    WHEN p_entidade = 'contatos'     AND p_acao = 'registro.excluido'   THEN ARRAY['general_service', 'closed']
+    ELSE NULL END
+$fn$ LANGUAGE sql IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION integracao_ts(t TIMESTAMPTZ) RETURNS TEXT AS $fn$
+  SELECT to_char(t AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')
+$fn$ LANGUAGE sql IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION integracao_emitir(p_type TEXT, p_aggregate TEXT, p_source TEXT, p_version INTEGER, p_op TEXT,
+                                             p_payload JSONB, p_occurred TIMESTAMPTZ) RETURNS VOID AS $fn$
+DECLARE seq BIGINT;
+BEGIN
+  UPDATE integracao_stream SET sequence = sequence + 1 WHERE stream = 'workforce_activity' RETURNING sequence INTO seq;
+  INSERT INTO integracao_outbox (sequence, aggregate_id, event) VALUES (seq, p_aggregate, jsonb_build_object(
+    'event_id', gen_random_uuid(), 'source_system', 'institucional', 'stream', 'workforce_activity',
+    'sequence', seq::text, 'event_type', p_type, 'schema_version', 1, 'source_id', p_source,
+    'aggregate_id', p_aggregate, 'aggregate_version', p_version, 'person_id', NULL::text, 'actor_auth_user_id', NULL::text,
+    'occurred_at', integracao_ts(p_occurred), 'recorded_at', integracao_ts(now()),
+    'effective_date', (p_occurred AT TIME ZONE 'America/Sao_Paulo')::date,
+    'operation', p_op, 'payload', p_payload, 'trace_id', gen_random_uuid()));
+  INSERT INTO integracao_versoes (aggregate_id, version, deleted) VALUES (p_aggregate, p_version, p_op = 'delete')
+    ON CONFLICT (aggregate_id) DO UPDATE SET version = EXCLUDED.version, deleted = EXCLUDED.deleted;
+END
+$fn$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION integracao_trg_candidatura() RETURNS trigger AS $fn$
+DECLARE agg TEXT; v INTEGER;
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    agg := 'application:' || OLD.id;
+    SELECT version + 1 INTO v FROM integracao_versoes WHERE aggregate_id = agg;
+    PERFORM integracao_emitir('institucional.application.status_changed.v1', agg, OLD.id::text, coalesce(v, 2), 'delete',
+                              '{}'::jsonb, now());
+    -- minimizacao: o item ainda nao consumido de um snapshot em andamento some junto com a candidatura
+    DELETE FROM integracao_snapshot_itens WHERE aggregate_id = agg;
+    RETURN OLD;
+  END IF;
+  agg := 'application:' || NEW.id;
+  IF TG_OP = 'INSERT' THEN
+    PERFORM integracao_emitir('institucional.application.received.v1', agg, NEW.id::text, 1, 'upsert', jsonb_build_object(
+      'status', integracao_status_candidatura(NEW.status), 'area_code', integracao_area(NEW.area),
+      'treatment_version', coalesce((SELECT valor FROM integracao_config WHERE chave = 'privacidade_versao'), 'nao-registrada'),
+      'consent_reference', CASE WHEN NEW.consentimento THEN 'site:candidatura:' || NEW.id ELSE NULL END,
+      'historical_snapshot', false), NEW.criado_em);
+  ELSIF integracao_status_candidatura(OLD.status) IS DISTINCT FROM integracao_status_candidatura(NEW.status) THEN
+    SELECT version + 1 INTO v FROM integracao_versoes WHERE aggregate_id = agg;
+    PERFORM integracao_emitir('institucional.application.status_changed.v1', agg, NEW.id::text, coalesce(v, 2), 'upsert',
+      jsonb_build_object('status', integracao_status_candidatura(NEW.status), 'area_code', integracao_area(NEW.area),
+      'treatment_version', coalesce((SELECT valor FROM integracao_config WHERE chave = 'privacidade_versao'), 'nao-registrada'),
+      'consent_reference', CASE WHEN NEW.consentimento THEN 'site:candidatura:' || NEW.id ELSE NULL END,
+      'historical_snapshot', false), now());
+  END IF;
+  RETURN NEW;
+END
+$fn$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS candidaturas_integracao ON candidaturas;
+CREATE TRIGGER candidaturas_integracao AFTER INSERT OR UPDATE OF status OR DELETE ON candidaturas
+  FOR EACH ROW EXECUTE FUNCTION integracao_trg_candidatura();
+
+-- Atividade administrativa por categoria. O site NAO tem identidade AUTH nem pessoa RH: ator e pessoa saem null e o
+-- e-mail/IP de quem agiu NUNCA vai ao feed.
+CREATE OR REPLACE FUNCTION integracao_trg_auditoria() RETURNS trigger AS $fn$
+DECLARE agg TEXT; m TEXT[]; v INTEGER;
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    agg := 'admin_action:' || OLD.id;
+    SELECT version + 1 INTO v FROM integracao_versoes WHERE aggregate_id = agg AND NOT deleted;
+    IF v IS NOT NULL THEN
+      PERFORM integracao_emitir('institucional.admin_action.recorded.v1', agg, OLD.id::text, v, 'delete', '{}'::jsonb, now());
+    END IF;
+    RETURN OLD;
+  END IF;
+  m := integracao_admin_acao(NEW.acao, NEW.entidade);
+  IF m IS NOT NULL THEN
+    PERFORM integracao_emitir('institucional.admin_action.recorded.v1', 'admin_action:' || NEW.id, NEW.id::text, 1, 'upsert',
+      jsonb_build_object('category', m[1], 'action', m[2], 'historical_snapshot', false), NEW.criado_em);
+  END IF;
+  RETURN NEW;
+END
+$fn$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS auditoria_integracao ON auditoria;
+CREATE TRIGGER auditoria_integracao AFTER INSERT OR DELETE ON auditoria
+  FOR EACH ROW EXECUTE FUNCTION integracao_trg_auditoria();
+
+-- Linhas que ja existiam antes do feed: entram so pelo snapshot (versao 1), sem evento retroativo no outbox.
+INSERT INTO integracao_versoes (aggregate_id, version)
+  SELECT 'application:' || c.id, 1 FROM candidaturas c ON CONFLICT DO NOTHING;
+INSERT INTO integracao_versoes (aggregate_id, version)
+  SELECT 'admin_action:' || a.id, 1 FROM auditoria a WHERE integracao_admin_acao(a.acao, a.entidade) IS NOT NULL
+  ON CONFLICT DO NOTHING;

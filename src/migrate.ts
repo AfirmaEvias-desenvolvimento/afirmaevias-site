@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { pool, consultarUm, consultar } from './db.js';
 import { config } from './config.js';
 import { gerarHashSenha } from './auth.js';
+import { vagas } from './content.js';
+import { publicarConfiguracao } from './integracao-produtor.js';
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 
@@ -18,6 +20,9 @@ async function rodar() {
   const sql = fs.readFileSync(caminho, 'utf8');
   await pool.query(sql);
   console.log('schema aplicado');
+
+  // Feed do RH: o trigger precisa da versao do aviso vigente e das areas de vaga publicadas (so elas saem como area_code).
+  await publicarConfiguracao(pool, config.versaoPolitica, vagas.areas);
 
   if (config.admin.email && config.admin.senha) {
     const existente = await consultarUm(

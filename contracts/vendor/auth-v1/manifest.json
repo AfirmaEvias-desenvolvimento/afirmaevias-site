@@ -1,0 +1,67 @@
+{
+  "contract_version": "AEVIAS-HIPERSISTEMA-1.0",
+  "algorithm": "sha256",
+  "files": {
+    "README.md": {
+      "sha256": "28050743fc8a371aa35c6127fba38bafbc3781bdd3c3d658d00dc5dc909c3ece",
+      "bytes": 1966
+    },
+    "auth.openapi.json": {
+      "sha256": "83d048eed7ecd70829dd265c6b37536b6049a55273783d5b6e7c001c1d7e63a3",
+      "bytes": 63513
+    },
+    "contratos.md": {
+      "sha256": "6fa081af93527e3b759bb269a84c3396a10622487fe4fb06cfe8135a06d654e0",
+      "bytes": 63327
+    },
+    "feeds.openapi.json": {
+      "sha256": "79033060d21f997ecec9ee10e1881a8da8bdf9d9ad84889afd79564e6a745748",
+      "bytes": 20036
+    },
+    "fixtures.json": {
+      "sha256": "9efaf46b9384753c247edda3c9d83305e8ff8e4c6f50efb3e3a92b43df875831",
+      "bytes": 10624
+    },
+    "login-kit-fundo.webp": {
+      "sha256": "1bacdebaff14bbe1293b0b9f681b299e8803ef27c056449731f7e483aa6c5a00",
+      "bytes": 69104
+    },
+    "login-kit-logo-claro.webp": {
+      "sha256": "63a94fd34d840ab93c96113e95185d05063cd0dedd729aca77421db6ba345eb8",
+      "bytes": 6418
+    },
+    "login-kit-logo-escuro.png": {
+      "sha256": "11f6d658377ba69e6233baadc42d0d0a21dffd92a51d05e9767bae3101e0bf57",
+      "bytes": 23682
+    },
+    "login-kit.css": {
+      "sha256": "9551a79c41cfd54ab34b6c67c45e2ad66551ce9751122e31e1879a87d8b91825",
+      "bytes": 5742
+    },
+    "login-kit.html": {
+      "sha256": "acbd1d3e2093129c7d163fd52d95e1e593ddf48818366060841a13f584ee2314",
+      "bytes": 16135
+    },
+    "login-kit.json": {
+      "sha256": "fb83ac97600325760976f7b1f77373d68da4cc5d5495df5dd0ee563d25372ee0",
+      "bytes": 4205
+    },
+    "rh.openapi.json": {
+      "sha256": "6f90cf6eb84277f2caeb9448c5a6b6709b80ea5d3bf7e9ed052503fbebbb0e99",
+      "bytes": 31705
+    },
+    "scenarios.json": {
+      "sha256": "71923f9d169c4872a5dc6e8e81f045067234703cb7b7393d76fd4aa37ef66719",
+      "bytes": 1738
+    },
+    "schemas.json": {
+      "sha256": "3a0ea55d479aa6b44d9adff12aeca0e197b01c9a3517a3787667543c3f06e576",
+      "bytes": 149606
+    },
+    "scopes.json": {
+      "sha256": "e728b189ee0e435b1c70acc7aa11969ab53d907b81346d35c31c19fc1cfbb31c",
+      "bytes": 12840
+    }
+  },
+  "sha256": "48b7d581f8b2cd5866319dc04e68d6c602e1aaa2f8ded3da6263c872fdf93c41"
+}

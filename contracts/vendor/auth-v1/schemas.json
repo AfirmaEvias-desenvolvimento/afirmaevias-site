@@ -1,0 +1,5998 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.aevias.invalid/v1/schemas.json",
+  "$defs": {
+    "AppCode": {
+      "type": "string",
+      "enum": [
+        "rh",
+        "ponto",
+        "controle",
+        "laboratorio",
+        "institucional",
+        "comercial",
+        "sl",
+        "projetos",
+        "nps"
+      ]
+    },
+    "Error": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "invalid_request",
+            "invalid_credentials",
+            "totp_required",
+            "totp_invalid",
+            "session_invalid",
+            "session_expired",
+            "session_revoked",
+            "app_not_allowed",
+            "person_blocked",
+            "user_not_registered",
+            "scope_denied",
+            "version_conflict",
+            "idempotency_conflict",
+            "identity_conflict",
+            "rate_limited",
+            "core_unavailable",
+            "dependency_contract_mismatch",
+            "cursor_expired"
+          ]
+        },
+        "errorCategory": {
+          "type": "string",
+          "enum": [
+            "permission",
+            "schema",
+            "network",
+            "conflict",
+            "totp_required",
+            "totp_invalid",
+            "unknown"
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "error",
+        "code",
+        "errorCategory",
+        "request_id",
+        "retryable"
+      ]
+    },
+    "AuthorizeRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "subject_token": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 8192
+        },
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "subject_token",
+        "app_code",
+        "request_id"
+      ]
+    },
+    "AuthorizeResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "allowed": {
+          "const": true
+        },
+        "subject": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "auth_user_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "session_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "auth_time": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "amr": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "pwd",
+                  "mfa",
+                  "otp",
+                  "hwk",
+                  "swk"
+                ]
+              },
+              "maxItems": 8,
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "auth_user_id",
+            "session_id",
+            "auth_time",
+            "amr"
+          ]
+        },
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "access_version": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "allowed",
+        "subject",
+        "app_code",
+        "request_id",
+        "access_version"
+      ]
+    },
+    "DelegatedAuthorizeRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "subject_token": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 8192
+        },
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "delegation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "purpose": {
+              "const": "rh.context"
+            },
+            "original_service_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "original_certificate_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          "required": [
+            "purpose",
+            "original_service_id"
+          ]
+        }
+      },
+      "required": [
+        "subject_token",
+        "app_code",
+        "request_id",
+        "delegation"
+      ]
+    },
+    "ServiceAuthorizeRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "capability": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.:-]{1,127}$"
+        }
+      },
+      "required": [
+        "app_code",
+        "request_id",
+        "capability"
+      ]
+    },
+    "DelegatedServiceAuthorizeRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "capability": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.:-]{1,127}$"
+        },
+        "delegation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "purpose": {
+              "const": "rh.service-context"
+            },
+            "original_service_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "original_certificate_sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          "required": [
+            "purpose",
+            "original_service_id",
+            "original_certificate_sha256"
+          ]
+        }
+      },
+      "required": [
+        "app_code",
+        "request_id",
+        "capability",
+        "delegation"
+      ]
+    },
+    "ServiceAuthorizeResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "allowed": {
+          "const": true
+        },
+        "service_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "policy_version": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "allowed",
+        "service_id",
+        "app_code",
+        "policy_version"
+      ]
+    },
+    "ContextRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "subject_token": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 8192
+        },
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "subject_token",
+        "app_code",
+        "request_id"
+      ]
+    },
+    "FunctionalRole": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "role_code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "mapping_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "valid_from": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "valid_to": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "role_code",
+        "app_code",
+        "mapping_version",
+        "valid_from",
+        "valid_to"
+      ]
+    },
+    "OrganizationScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "organizational_unit_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "self",
+            "team",
+            "unit",
+            "organization"
+          ]
+        },
+        "mapping_version": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "organizational_unit_id",
+        "scope",
+        "mapping_version"
+      ]
+    },
+    "ContextResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "person_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "auth_user_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "employee_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "employment_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "person_kind": {
+          "type": "string",
+          "enum": [
+            "employee",
+            "contractor",
+            "external"
+          ]
+        },
+        "access_status": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "blocked",
+            "pending_review"
+          ]
+        },
+        "functional_roles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FunctionalRole"
+          },
+          "maxItems": 100,
+          "uniqueItems": true
+        },
+        "organization_scope": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OrganizationScope"
+          },
+          "maxItems": 100,
+          "uniqueItems": true
+        },
+        "policy_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "access_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "effective_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "person_id",
+        "auth_user_id",
+        "employee_id",
+        "employment_id",
+        "person_kind",
+        "access_status",
+        "functional_roles",
+        "organization_scope",
+        "policy_version",
+        "access_version",
+        "effective_at",
+        "request_id"
+      ]
+    },
+    "ServiceContextRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "capability": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.:-]{1,127}$"
+        }
+      },
+      "required": [
+        "app_code",
+        "request_id",
+        "capability"
+      ]
+    },
+    "ServiceContextResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "policy_version": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "enabled",
+        "app_code",
+        "policy_version"
+      ]
+    },
+    "Person": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "person_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "person_kind": {
+          "type": "string",
+          "enum": [
+            "employee",
+            "contractor",
+            "external"
+          ]
+        },
+        "access_status": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "blocked",
+            "pending_review"
+          ]
+        },
+        "access_version": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "person_id",
+        "person_kind",
+        "access_status",
+        "access_version"
+      ]
+    },
+    "PersonsQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "person_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "maxItems": 100,
+          "uniqueItems": true
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "person_ids",
+        "request_id"
+      ]
+    },
+    "PersonsResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Person"
+          },
+          "maxItems": 100,
+          "uniqueItems": true
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "items",
+        "request_id"
+      ]
+    },
+    "OrganizationUnit": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "organizational_unit_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "parent_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unit_kind": {
+          "type": "string",
+          "enum": [
+            "department",
+            "branch",
+            "cost_center",
+            "team"
+          ]
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "organizational_unit_id",
+        "parent_id",
+        "unit_kind",
+        "version"
+      ]
+    },
+    "OrganizationUnitsResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OrganizationUnit"
+          },
+          "maxItems": 1000,
+          "uniqueItems": true
+        },
+        "next_cursor": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "has_more": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "items",
+        "next_cursor",
+        "has_more"
+      ]
+    },
+    "BlockUserRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "auth_user_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "operation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "access_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "effective_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "auth_user_id",
+        "operation_id",
+        "access_version",
+        "effective_at",
+        "request_id"
+      ]
+    },
+    "BlockUserResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "auth_user_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "status": {
+          "const": "blocked"
+        },
+        "access_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "effective_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "revoked_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "operation_id",
+        "auth_user_id",
+        "status",
+        "access_version",
+        "effective_at",
+        "revoked_at",
+        "request_id"
+      ]
+    },
+    "OffboardRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "person_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "employment_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "effective_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reason_code": {
+          "type": "string",
+          "enum": [
+            "employment_ended",
+            "contract_ended",
+            "security",
+            "legal_restriction"
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "person_id",
+        "employment_id",
+        "effective_at",
+        "reason_code",
+        "request_id"
+      ]
+    },
+    "OffboardResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "person_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "scheduled",
+            "blocked_in_rh",
+            "auth_revocation_pending",
+            "auth_revocation_confirmed"
+          ]
+        },
+        "access_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "effective_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "operation_id",
+        "person_id",
+        "status",
+        "access_version",
+        "effective_at",
+        "request_id"
+      ]
+    },
+    "RoleAssignmentRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "person_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "role_code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "mapping_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "valid_from": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "valid_to": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "person_id",
+        "app_code",
+        "role_code",
+        "mapping_version",
+        "valid_from",
+        "valid_to",
+        "request_id"
+      ]
+    },
+    "GrantRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "auth_user_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "revoked"
+          ]
+        },
+        "valid_from": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "valid_to": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "actor_subject_token": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 8192
+        }
+      },
+      "required": [
+        "auth_user_id",
+        "app_code",
+        "status",
+        "valid_from",
+        "valid_to",
+        "request_id"
+      ]
+    },
+    "GrantResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "auth_user_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "revoked",
+            "suspended"
+          ]
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "auth_user_id",
+        "app_code",
+        "status",
+        "version",
+        "request_id"
+      ]
+    },
+    "BootstrapRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "auth_user_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "installation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "operation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "auth_user_id",
+        "installation_id",
+        "operation_id",
+        "request_id"
+      ]
+    },
+    "BootstrapResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "auth_user_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "installation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "consumed"
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "operation_id",
+        "auth_user_id",
+        "installation_id",
+        "status",
+        "request_id"
+      ]
+    },
+    "HealthLive": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "live"
+        }
+      },
+      "required": [
+        "status"
+      ]
+    },
+    "HealthReady": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "ready",
+            "not_ready"
+          ]
+        },
+        "contract_version": {
+          "const": "AEVIAS-HIPERSISTEMA-1.0"
+        },
+        "contract_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "source_sha256": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "status",
+        "contract_version"
+      ]
+    },
+    "Capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "auth",
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "contract_version": {
+          "const": "AEVIAS-HIPERSISTEMA-1.0"
+        },
+        "contract_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "maxItems": 100,
+          "uniqueItems": true
+        },
+        "release": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "app_code",
+        "contract_version",
+        "contract_sha256",
+        "capabilities",
+        "release"
+      ]
+    },
+    "SourceConfiguration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional"
+          ]
+        },
+        "base_url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://"
+        },
+        "contract_version": {
+          "const": "AEVIAS-HIPERSISTEMA-1.0"
+        },
+        "contract_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "credential_ref": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_.-]{0,127}$"
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "app_code",
+        "base_url",
+        "contract_version",
+        "contract_sha256",
+        "enabled",
+        "credential_ref",
+        "request_id"
+      ]
+    },
+    "SourceStatus": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "disabled",
+            "not_configured",
+            "healthy",
+            "stale",
+            "quarantined"
+          ]
+        },
+        "last_success_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "last_applied_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "received_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "applied_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pending_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "app_code",
+        "status",
+        "last_success_at",
+        "last_applied_at",
+        "received_count",
+        "applied_count",
+        "pending_count"
+      ]
+    },
+    "SnapshotRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stream": {
+          "const": "workforce_activity"
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "stream",
+        "request_id"
+      ]
+    },
+    "SnapshotCreated": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "snapshot_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "high_watermark": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "schema_version": {
+          "const": 1
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "snapshot_id",
+        "high_watermark",
+        "expires_at",
+        "schema_version",
+        "request_id"
+      ]
+    },
+    "Reconciliation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_system": {
+          "type": "string",
+          "enum": [
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional"
+          ]
+        },
+        "schema_version": {
+          "const": 1
+        },
+        "high_watermark": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "partitions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "partition": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "required": [
+              "partition",
+              "count",
+              "sha256"
+            ]
+          },
+          "maxItems": 1000,
+          "uniqueItems": true
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "source_system",
+        "schema_version",
+        "high_watermark",
+        "partitions",
+        "generated_at"
+      ]
+    },
+    "Timesheet": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "person_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "source_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "month": {
+          "type": "string",
+          "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+        },
+        "expected_minutes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "worked_minutes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "overtime_minutes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "balance_minutes": {
+          "type": "integer"
+        },
+        "unjustified_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "calculation_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "timezone": {
+          "const": "America/Sao_Paulo"
+        }
+      },
+      "required": [
+        "person_id",
+        "source_id",
+        "month",
+        "expected_minutes",
+        "worked_minutes",
+        "overtime_minutes",
+        "balance_minutes",
+        "unjustified_count",
+        "calculation_version",
+        "revision",
+        "generated_at",
+        "timezone"
+      ]
+    },
+    "OfflineOwner": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "issuer": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://"
+        },
+        "auth_user_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "person_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "local_user_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "installation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "operation_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "issuer",
+        "auth_user_id",
+        "person_id",
+        "local_user_id",
+        "installation_id",
+        "operation_id"
+      ]
+    },
+    "Event": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "ponto"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "ponto.punch.recorded.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "actor_auth_user_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "upsert"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "valid",
+                    "disregarded",
+                    "pending"
+                  ]
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "in",
+                    "out"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "app",
+                    "web",
+                    "adjustment",
+                    "import"
+                  ]
+                },
+                "nsr": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "punched_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "received_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "local_user_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "location_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "historical_snapshot": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "status",
+                "type",
+                "source",
+                "nsr",
+                "punched_at",
+                "received_at",
+                "local_user_id",
+                "location_id",
+                "historical_snapshot"
+              ]
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "ponto"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "ponto.punch.recorded.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "type": "null"
+            },
+            "actor_auth_user_id": {
+              "type": "null"
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "delete"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {},
+              "required": []
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "ponto"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "ponto.punch.status_changed.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "actor_auth_user_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "upsert"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "valid",
+                    "disregarded",
+                    "pending"
+                  ]
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "in",
+                    "out"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "app",
+                    "web",
+                    "adjustment",
+                    "import"
+                  ]
+                },
+                "nsr": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "punched_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "received_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "local_user_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "location_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "historical_snapshot": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "status",
+                "type",
+                "source",
+                "nsr",
+                "punched_at",
+                "received_at",
+                "local_user_id",
+                "location_id",
+                "historical_snapshot"
+              ]
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "ponto"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "ponto.punch.status_changed.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "type": "null"
+            },
+            "actor_auth_user_id": {
+              "type": "null"
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "delete"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {},
+              "required": []
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "ponto"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "ponto.timesheet.revised.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "actor_auth_user_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "upsert"
+            },
+            "payload": {
+              "$ref": "#/$defs/Timesheet"
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "ponto"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "ponto.timesheet.revised.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "type": "null"
+            },
+            "actor_auth_user_id": {
+              "type": "null"
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "delete"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {},
+              "required": []
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "controle"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "controle.record.created.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "actor_auth_user_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "upsert"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "record_type": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "draft",
+                    "finalized",
+                    "approved",
+                    "rejected",
+                    "signed",
+                    "cancelled"
+                  ]
+                },
+                "local_user_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "executor_auth_user_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "source_unit_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "historical_snapshot": {
+                  "type": "boolean"
+                },
+                "project_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "regional_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "record_type",
+                "state",
+                "local_user_id",
+                "executor_auth_user_id",
+                "source_unit_id",
+                "historical_snapshot",
+                "project_id",
+                "regional_id"
+              ]
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "controle"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "controle.record.created.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "type": "null"
+            },
+            "actor_auth_user_id": {
+              "type": "null"
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "delete"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {},
+              "required": []
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "controle"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "controle.record.state_changed.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "actor_auth_user_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "upsert"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "record_type": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "draft",
+                    "finalized",
+                    "approved",
+                    "rejected",
+                    "signed",
+                    "cancelled"
+                  ]
+                },
+                "local_user_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "executor_auth_user_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "source_unit_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "historical_snapshot": {
+                  "type": "boolean"
+                },
+                "project_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "regional_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "record_type",
+                "state",
+                "local_user_id",
+                "executor_auth_user_id",
+                "source_unit_id",
+                "historical_snapshot",
+                "project_id",
+                "regional_id"
+              ]
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "controle"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "controle.record.state_changed.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "type": "null"
+            },
+            "actor_auth_user_id": {
+              "type": "null"
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "delete"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {},
+              "required": []
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "controle"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "controle.assignment.changed.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "actor_auth_user_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "upsert"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "local_user_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "executor_auth_user_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "source_unit_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "historical_snapshot": {
+                  "type": "boolean"
+                },
+                "project_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "regional_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "valid_from": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "valid_to": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "local_user_id",
+                "executor_auth_user_id",
+                "source_unit_id",
+                "historical_snapshot",
+                "project_id",
+                "regional_id",
+                "valid_from",
+                "valid_to"
+              ]
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "controle"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "controle.assignment.changed.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "type": "null"
+            },
+            "actor_auth_user_id": {
+              "type": "null"
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "delete"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {},
+              "required": []
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "laboratorio"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "laboratorio.test.state_changed.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "actor_auth_user_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "upsert"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "test_type": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "draft",
+                    "submitted",
+                    "validated",
+                    "approved",
+                    "rejected",
+                    "cancelled"
+                  ]
+                },
+                "local_user_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "executor_auth_user_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "source_unit_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "historical_snapshot": {
+                  "type": "boolean"
+                },
+                "sample_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "test_type",
+                "state",
+                "local_user_id",
+                "executor_auth_user_id",
+                "source_unit_id",
+                "historical_snapshot",
+                "sample_id"
+              ]
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "laboratorio"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "laboratorio.test.state_changed.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "type": "null"
+            },
+            "actor_auth_user_id": {
+              "type": "null"
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "delete"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {},
+              "required": []
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "laboratorio"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "laboratorio.certificate.issued.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "actor_auth_user_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "upsert"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "issued",
+                    "revised",
+                    "cancelled"
+                  ]
+                },
+                "certificate_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "original_certificate_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "revision": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "local_user_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "executor_auth_user_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "source_unit_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "historical_snapshot": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "state",
+                "certificate_id",
+                "original_certificate_id",
+                "revision",
+                "local_user_id",
+                "executor_auth_user_id",
+                "source_unit_id",
+                "historical_snapshot"
+              ]
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "laboratorio"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "laboratorio.certificate.issued.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "type": "null"
+            },
+            "actor_auth_user_id": {
+              "type": "null"
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "delete"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {},
+              "required": []
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "laboratorio"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "laboratorio.certificate.revised.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "actor_auth_user_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "upsert"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "issued",
+                    "revised",
+                    "cancelled"
+                  ]
+                },
+                "certificate_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "original_certificate_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "revision": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "local_user_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "executor_auth_user_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "source_unit_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "historical_snapshot": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "state",
+                "certificate_id",
+                "original_certificate_id",
+                "revision",
+                "local_user_id",
+                "executor_auth_user_id",
+                "source_unit_id",
+                "historical_snapshot"
+              ]
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "laboratorio"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "laboratorio.certificate.revised.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "type": "null"
+            },
+            "actor_auth_user_id": {
+              "type": "null"
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "delete"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {},
+              "required": []
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "laboratorio"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "laboratorio.competence.changed.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "actor_auth_user_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "upsert"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "competence_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "qualified",
+                    "suspended",
+                    "expired",
+                    "revoked"
+                  ]
+                },
+                "valid_from": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "valid_to": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "local_user_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "executor_auth_user_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "source_unit_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "historical_snapshot": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "competence_id",
+                "state",
+                "valid_from",
+                "valid_to",
+                "local_user_id",
+                "executor_auth_user_id",
+                "source_unit_id",
+                "historical_snapshot"
+              ]
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "laboratorio"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "laboratorio.competence.changed.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "type": "null"
+            },
+            "actor_auth_user_id": {
+              "type": "null"
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "delete"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {},
+              "required": []
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "institucional"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "institucional.application.received.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "actor_auth_user_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "upsert"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "received",
+                    "screening",
+                    "linked",
+                    "closed",
+                    "withdrawn"
+                  ]
+                },
+                "area_code": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "treatment_version": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "consent_reference": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "historical_snapshot": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "status",
+                "area_code",
+                "treatment_version",
+                "consent_reference",
+                "historical_snapshot"
+              ]
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "institucional"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "institucional.application.received.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "type": "null"
+            },
+            "actor_auth_user_id": {
+              "type": "null"
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "delete"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {},
+              "required": []
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "institucional"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "institucional.application.status_changed.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "actor_auth_user_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "upsert"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "received",
+                    "screening",
+                    "linked",
+                    "closed",
+                    "withdrawn"
+                  ]
+                },
+                "area_code": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "treatment_version": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "consent_reference": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "historical_snapshot": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "status",
+                "area_code",
+                "treatment_version",
+                "consent_reference",
+                "historical_snapshot"
+              ]
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "institucional"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "institucional.application.status_changed.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "type": "null"
+            },
+            "actor_auth_user_id": {
+              "type": "null"
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "delete"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {},
+              "required": []
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "institucional"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "institucional.admin_action.recorded.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "actor_auth_user_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "upsert"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "category": {
+                  "type": "string",
+                  "enum": [
+                    "content",
+                    "recruitment",
+                    "general_service"
+                  ]
+                },
+                "action": {
+                  "type": "string",
+                  "enum": [
+                    "created",
+                    "updated",
+                    "assigned",
+                    "closed"
+                  ]
+                },
+                "historical_snapshot": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "category",
+                "action",
+                "historical_snapshot"
+              ]
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "source_system": {
+              "const": "institucional"
+            },
+            "stream": {
+              "const": "workforce_activity"
+            },
+            "sequence": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$"
+            },
+            "event_type": {
+              "const": "institucional.admin_action.recorded.v1"
+            },
+            "schema_version": {
+              "const": 1
+            },
+            "source_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "aggregate_version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "person_id": {
+              "type": "null"
+            },
+            "actor_auth_user_id": {
+              "type": "null"
+            },
+            "occurred_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "recorded_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "effective_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "operation": {
+              "const": "delete"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {},
+              "required": []
+            },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "event_id",
+            "source_system",
+            "stream",
+            "sequence",
+            "event_type",
+            "schema_version",
+            "source_id",
+            "aggregate_id",
+            "aggregate_version",
+            "person_id",
+            "actor_auth_user_id",
+            "occurred_at",
+            "recorded_at",
+            "effective_date",
+            "operation",
+            "payload",
+            "trace_id"
+          ]
+        }
+      ]
+    },
+    "LoginPasswordRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "password": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "client_ip": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "ipv4"
+            },
+            {
+              "type": "string",
+              "format": "ipv6"
+            }
+          ]
+        }
+      },
+      "required": [
+        "app_code",
+        "request_id",
+        "email",
+        "password",
+        "client_ip"
+      ]
+    },
+    "LoginMfaRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "pending_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{43}$"
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^[0-9]{6}$"
+        }
+      },
+      "required": [
+        "app_code",
+        "request_id",
+        "pending_id",
+        "code"
+      ]
+    },
+    "LoginResponse": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "authenticated"
+            },
+            "email": {
+              "type": "string",
+              "format": "email",
+              "maxLength": 254
+            },
+            "auth_user_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "auth_time": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "amr": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "pwd",
+                  "mfa",
+                  "otp",
+                  "hwk",
+                  "swk"
+                ]
+              },
+              "maxItems": 8,
+              "uniqueItems": true
+            },
+            "access_key": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 8192
+            },
+            "access_expires_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "refresh_key": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 8192
+            },
+            "session_expires_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "status",
+            "email",
+            "auth_user_id",
+            "auth_time",
+            "amr",
+            "access_key",
+            "access_expires_at",
+            "refresh_key",
+            "session_expires_at"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "mfa_required"
+            },
+            "pending_id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{43}$"
+            },
+            "setup": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "secret": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "uri": {
+                  "type": "string",
+                  "maxLength": 2048
+                }
+              },
+              "required": [
+                "secret",
+                "uri"
+              ]
+            }
+          },
+          "required": [
+            "status",
+            "pending_id"
+          ]
+        }
+      ]
+    },
+    "LoginRefreshRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "refresh_key": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 8192
+        }
+      },
+      "required": [
+        "app_code",
+        "request_id",
+        "refresh_key"
+      ]
+    },
+    "LoginRefreshResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "access_key": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 8192
+        },
+        "access_expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "refresh_key": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 8192
+        },
+        "session_expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "access_key",
+        "access_expires_at",
+        "refresh_key",
+        "session_expires_at"
+      ]
+    },
+    "LoginLogoutRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "access_key": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 8192
+        },
+        "refresh_key": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 8192
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "app",
+            "global"
+          ]
+        }
+      },
+      "required": [
+        "app_code",
+        "request_id",
+        "scope"
+      ]
+    },
+    "LoginLogoutResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "logged_out"
+        }
+      },
+      "required": [
+        "status"
+      ]
+    },
+    "LoginStepUpRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "access_key": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 8192
+        },
+        "password": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^[0-9]{6}$"
+        }
+      },
+      "required": [
+        "app_code",
+        "request_id",
+        "access_key",
+        "password"
+      ]
+    },
+    "LoginStepUpResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "auth_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "amr": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "pwd",
+              "mfa",
+              "otp",
+              "hwk",
+              "swk"
+            ]
+          },
+          "maxItems": 8,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "auth_time",
+        "amr"
+      ]
+    },
+    "AccountRecoverRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "client_ip": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "ipv4"
+            },
+            {
+              "type": "string",
+              "format": "ipv6"
+            }
+          ]
+        }
+      },
+      "required": [
+        "app_code",
+        "request_id",
+        "email",
+        "client_ip"
+      ]
+    },
+    "AccountRecoverResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "accepted"
+        }
+      },
+      "required": [
+        "status"
+      ]
+    },
+    "AccountVerifyRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^[0-9]{6}$"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "recovery",
+            "invite"
+          ]
+        },
+        "client_ip": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "ipv4"
+            },
+            {
+              "type": "string",
+              "format": "ipv6"
+            }
+          ]
+        }
+      },
+      "required": [
+        "app_code",
+        "request_id",
+        "email",
+        "code",
+        "type",
+        "client_ip"
+      ]
+    },
+    "AccountVerifyResponse": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "password_required"
+            },
+            "password_ticket": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{43}$"
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "status",
+            "password_ticket",
+            "expires_at"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "mfa_required"
+            },
+            "pending_id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{43}$"
+            },
+            "setup": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "secret": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "uri": {
+                  "type": "string",
+                  "maxLength": 2048
+                }
+              },
+              "required": [
+                "secret",
+                "uri"
+              ]
+            }
+          },
+          "required": [
+            "status",
+            "pending_id"
+          ]
+        }
+      ]
+    },
+    "AccountPasswordRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "new_password": {
+          "type": "string",
+          "minLength": 12,
+          "maxLength": 1024
+        },
+        "password_ticket": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{43}$"
+        },
+        "access_key": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 8192
+        },
+        "current_password": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^[0-9]{6}$"
+        }
+      },
+      "required": [
+        "app_code",
+        "request_id",
+        "new_password"
+      ]
+    },
+    "AccountPasswordResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "changed"
+        }
+      },
+      "required": [
+        "status"
+      ]
+    },
+    "AccountMfaResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "enrollment_required"
+        }
+      },
+      "required": [
+        "status"
+      ]
+    },
+    "AccessSystemsListRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "actor_subject_token": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 8192
+        },
+        "auth_user_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "actor_subject_token",
+        "auth_user_id",
+        "request_id"
+      ]
+    },
+    "AccessSystemsResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "auth_user_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "systems": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "app_code": {
+                "type": "string",
+                "enum": [
+                  "rh",
+                  "ponto",
+                  "controle",
+                  "laboratorio",
+                  "institucional",
+                  "comercial",
+                  "sl",
+                  "projetos",
+                  "nps"
+                ]
+              },
+              "enabled": {
+                "type": "boolean"
+              },
+              "status": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "revoked",
+                      "suspended"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "current": {
+                "type": "boolean"
+              },
+              "kind": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "direct",
+                      "automatic"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "source": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "rh",
+                      "ponto",
+                      "controle",
+                      "laboratorio",
+                      "institucional",
+                      "comercial",
+                      "sl",
+                      "projetos",
+                      "nps"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "app_code",
+              "enabled",
+              "status",
+              "current",
+              "kind",
+              "source"
+            ]
+          },
+          "maxItems": 32,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "auth_user_id",
+        "systems"
+      ]
+    },
+    "AccessSystemChangeRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "actor_subject_token": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 8192
+        },
+        "auth_user_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "app_code": {
+          "type": "string",
+          "enum": [
+            "rh",
+            "ponto",
+            "controle",
+            "laboratorio",
+            "institucional",
+            "comercial",
+            "sl",
+            "projetos",
+            "nps"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "revoked"
+          ]
+        },
+        "valid_from": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "actor_subject_token",
+        "auth_user_id",
+        "app_code",
+        "status",
+        "valid_from",
+        "request_id"
+      ]
+    },
+    "AccessInviteRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "actor_subject_token": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 8192
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "request_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "actor_subject_token",
+        "email",
+        "request_id"
+      ]
+    },
+    "AccessInviteResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "invited"
+        },
+        "auth_user_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "status",
+        "auth_user_id"
+      ]
+    },
+    "ChangesResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Event"
+          },
+          "maxItems": 1000,
+          "uniqueItems": true
+        },
+        "next_cursor": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "has_more": {
+          "type": "boolean"
+        },
+        "high_watermark": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "schema_version": {
+          "const": 1
+        }
+      },
+      "required": [
+        "items",
+        "next_cursor",
+        "has_more",
+        "high_watermark",
+        "generated_at",
+        "schema_version"
+      ]
+    },
+    "SnapshotPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "snapshot_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Event"
+          },
+          "maxItems": 1000,
+          "uniqueItems": true
+        },
+        "next_cursor": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "has_more": {
+          "type": "boolean"
+        },
+        "high_watermark": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "schema_version": {
+          "const": 1
+        }
+      },
+      "required": [
+        "snapshot_id",
+        "items",
+        "next_cursor",
+        "has_more",
+        "high_watermark",
+        "schema_version"
+      ]
+    }
+  }
+}

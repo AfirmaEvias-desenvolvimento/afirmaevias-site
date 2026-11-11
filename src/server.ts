@@ -15,6 +15,7 @@ import { pool } from './db.js';
 import { limparSessoesExpiradas } from './auth.js';
 import { aplicarRetencao } from './retencao.js';
 import { iniciarFilaComercial } from './comercial-fila.js';
+import { iniciarIntegracao } from './integracao-servidor.js';
 import { asset } from './assets.js';
 import { dadosEstruturados } from './seo.js';
 import { linhasDeTitulo } from './utils.js';
@@ -166,6 +167,9 @@ aplicarRetencao().catch(() => {});
 
 // Conexão 1 (Institucional → Comercial): reenvia os leads pendentes. Não faz nada sem COMERCIAL_API_URL.
 iniciarFilaComercial();
+
+// Feed do produtor 'institucional' para o RH (changes/snapshots/reconciliation por mTLS). Não faz nada sem INTEGRACAO_PORT.
+await iniciarIntegracao(pool, { chaveCursorPadrao: config.sessionSecret, versaoPolitica: config.versaoPolitica, areas: conteudo.vagas.areas });
 
 // O Railway manda SIGTERM a cada redeploy. Sem tratar, a requisicao que estava
 // no meio do caminho e cortada e o pool do Postgres morre com o processo, sem
