@@ -181,8 +181,7 @@ CREATE TABLE IF NOT EXISTS tentativas_login (
 CREATE INDEX IF NOT EXISTS idx_tentativas_email ON tentativas_login (email, criado_em DESC);
 
 -- ------------------------------------------------- eliminacao no Comercial
--- O Comercial (C12) nao tem exclusao de lead: quando o site apaga um contato cujo lead JA foi entregue, o lead continua la.
--- Esta tabela e a PENDENCIA que obriga um humano do Comercial a elimina-lo pelo painel dele e a marcar aqui como concluida.
+-- Quando o site apaga um contato cujo lead JA foi entregue, esta pendencia e encerrada apos confirmacao do Comercial.
 -- Nao guarda dado pessoal de proposito: so o id do lead devolvido pelo Comercial (UUID opaco), datas, origem, status e o id
 -- (UUID) de quem agiu no painel. Nome, e-mail, telefone, CNPJ e mensagem NUNCA entram aqui (ha teste cobrando).
 CREATE TABLE IF NOT EXISTS eliminacoes_comercial (

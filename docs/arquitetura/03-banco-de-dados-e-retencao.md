@@ -54,7 +54,7 @@ provedores. O repositório não contém rotina de backup/restauração do banco.
 | Dados | Regra automática |
 |---|---|
 | Candidaturas e currículo | Exclui após 12 meses de `criado_em` |
-| Contatos | Exclui após 24 meses de `criado_em`; se o lead já tinha sido entregue ao Comercial, o gatilho cria a pendência em `eliminacoes_comercial` (a eliminação lá é manual) |
+| Contatos | Exclui após 24 meses de `criado_em`. Se o lead já foi entregue ao Comercial, o gatilho cria a pendência em `eliminacoes_comercial` para envio pelo painel. |
 | IP e user-agent de contatos e candidaturas | Define NULL após 6 meses, nas linhas cujo IP ainda não é NULL |
 | Solicitações LGPD | Exclui após 5 anos de `criado_em` |
 | Consentimentos | Exclui após 5 anos de `criado_em` |

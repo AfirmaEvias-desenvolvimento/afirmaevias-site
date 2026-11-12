@@ -12,6 +12,8 @@ import {
   usuarioDaRequisicao
 } from '../auth.js';
 import { registrarAuditoria } from '../audit.js';
+import { configComercial } from '../comercial-fila.js';
+import { transporteMtls } from '../comercial.js';
 import { concluirPendencia, contarPendenciasAbertas, excluirContatoPeloPainel, listarPendencias } from '../eliminacao-comercial.js';
 import { cabecalhoAnexo, emailValido, limpar, paraCsv } from '../utils.js';
 
@@ -489,7 +491,7 @@ export async function rotasAdmin(app: FastifyInstance) {
     if (request.usuario?.papel !== 'admin') return reply.code(403).send('Só administradores podem excluir.');
 
     // Contato: a exclusão passa por transação que informa quem pediu; se o lead já foi entregue ao Comercial, o banco
-    // registra a pendência de eliminação lá (o contrato C12 não tem exclusão). Ver eliminacao-comercial.ts.
+    // registra a pendência para confirmação pelo Comercial. Ver eliminacao-comercial.ts.
     let leadEntregue = false;
     if (colecao.tabela === 'contatos') {
       leadEntregue = (await excluirContatoPeloPainel(id, request.usuario.id)).leadEntregue;
@@ -553,31 +555,27 @@ export async function rotasAdmin(app: FastifyInstance) {
   });
 
   // ------------------------------------------------ eliminação no Comercial
-  // Leads já entregues ao Comercial de contatos que o site apagou (LGPD/retenção). O Comercial não tem exclusão pela API:
-  // o responsável de lá elimina o lead no painel dele e volta aqui para marcar como concluída.
+  // Leads já entregues ao Comercial de contatos que o site apagou (LGPD/retenção).
   app.get('/eliminacoes-comercial', { preHandler: exigirLogin }, async (request, reply) => {
+    const { novo, resultado } = request.query as { novo?: string; resultado?: string };
     return reply.view('admin/eliminacoes-comercial', {
       titulo: 'Eliminações no Comercial',
       usuario: request.usuario,
       rotaAtual: '/admin/eliminacoes-comercial',
       pendencias: await listarPendencias(),
-      aviso: (request.query as any).novo === '1' ? 'novo' : (request.query as any).concluida === '1' ? 'concluida' : ''
+      aviso: novo === '1' ? 'novo' : resultado
     });
   });
 
   app.post('/eliminacoes-comercial/:id/concluir', { preHandler: exigirLogin }, async (request, reply) => {
     if (request.usuario?.papel !== 'admin') return reply.code(403).send('Só administradores podem concluir.');
-    const { id } = request.params as any;
-    const leadId = await concluirPendencia(id, request.usuario.id);
-    if (!leadId) return reply.callNotFound();
-    await registrarAuditoria({
-      usuario: request.usuario,
-      acao: 'eliminacao_comercial.concluida',
-      entidade: 'eliminacoes_comercial',
-      entidadeId: id,
-      ip: request.ip
-    });
-    return reply.redirect('/admin/eliminacoes-comercial?concluida=1');
+    const origem = request.headers['sec-fetch-site'];
+    if (origem && origem !== 'same-origin' && origem !== 'none') return reply.code(403).send('Origem da requisição inválida.');
+    const { id } = request.params as { id: string };
+    const cfg = configComercial();
+    const resultado = await concluirPendencia(id, request.usuario, cfg ? transporteMtls(cfg) : undefined, request.ip);
+    if (resultado === 'nao_encontrada') return reply.callNotFound();
+    return reply.redirect('/admin/eliminacoes-comercial?resultado=' + resultado);
   });
 
   // ------------------------------------------------------------- auditoria

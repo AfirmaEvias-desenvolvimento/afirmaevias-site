@@ -101,8 +101,7 @@ test('o painel exclui contato pela transação com pendência, lista as pendênc
   assert.match(admin, /app\.get\('\/eliminacoes-comercial'/);
   assert.match(admin, /app\.post\('\/eliminacoes-comercial\/:id\/concluir'[\s\S]*?papel !== 'admin'/);
   const tela = ler('src', 'views', 'admin', 'eliminacoes-comercial.ejs');
-  assert.match(tela, /painel do Comercial/);
-  assert.match(tela, /Marcar como concluída/);
+  assert.match(tela, /Eliminar no Comercial/);
   assert.match(tela, /p\.lead_id/);
   // a tela não consulta nem mostra dado do contato
   assert.doesNotMatch(tela, /\b(email|telefone|cnpj|mensagem)\b/i);

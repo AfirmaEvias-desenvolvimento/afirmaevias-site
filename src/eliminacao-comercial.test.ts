@@ -41,7 +41,7 @@ test(
       fs.rmSync(dir, { recursive: true, force: true });
       return;
     }
-    process.env.DATABASE_URL = `postgres://comercial:comercial@127.0.0.1:${porta}/site_elim`;
+    process.env.DATABASE_URL = servidor.urls.migracao;
     process.env.NODE_ENV = 'development';
     const { pool, consultar } = await import('./db.js');
     const { aplicarRetencao } = await import('./retencao.js');
@@ -133,14 +133,27 @@ test(
         assert.ok(lista.every((p) => p.status === 'pendente'));
         const alvo = lista.find((p) => p.lead_id === LEAD_A)!;
         assert.equal(alvo.registrado_por_nome, 'Operador');
-        assert.equal(await concluirPendencia(alvo.id, operador), LEAD_A);
-        assert.equal(await concluirPendencia(alvo.id, operador), null, 'concluir de novo não repete');
+        const usuario = { id: operador, email: 'operador@exemplo.test' };
+        assert.equal(await concluirPendencia(alvo.id, usuario), 'nao_confirmada');
+        assert.equal(await concluirPendencia(alvo.id, usuario, async () => ({ status: 503 })), 'nao_confirmada');
+        assert.equal(await concluirPendencia(alvo.id, usuario, async () => ({ status: 409, corpo: { code: 'lead_linked' } })), 'vinculada');
+        assert.equal(await contarPendenciasAbertas(), 3);
+        assert.equal(await concluirPendencia(alvo.id, usuario, async (metodo, caminho, corpo) => {
+          assert.equal(metodo, 'DELETE');
+          assert.equal(caminho, '/api/integracao/v1/comercial/leads/' + LEAD_A);
+          assert.equal(corpo, undefined);
+          return { status: 204 };
+        }), 'concluida');
+        assert.equal(await concluirPendencia(alvo.id, usuario, async () => assert.fail('repetição não chama o Comercial')), 'concluida');
         assert.equal(await contarPendenciasAbertas(), 2);
         const depois = (await listarPendencias()).find((p) => p.id === alvo.id)!;
         assert.equal(depois.status, 'concluida');
         assert.equal(depois.concluida_por_nome, 'Operador');
         assert.ok(depois.concluida_em);
-        assert.equal(await concluirPendencia('nao-e-uuid', operador), null);
+        const auditoria = await consultar(
+          "SELECT entidade_id FROM auditoria WHERE acao = 'eliminacao_comercial.concluida' AND entidade_id = $1", [alvo.id]);
+        assert.equal(auditoria.length, 1);
+        assert.equal(await concluirPendencia('nao-e-uuid', usuario), 'nao_encontrada');
       });
     } finally {
       await pool.end().catch(() => {});

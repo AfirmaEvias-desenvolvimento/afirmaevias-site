@@ -125,7 +125,7 @@ export function lerConfigComercial(env: NodeJS.ProcessEnv = process.env, aviso: 
 }
 
 export type RespostaHttp = { status: number | null; corpo?: any };
-export type Transporte = (metodo: 'GET' | 'POST', caminho: string, corpo?: unknown, chave?: string) => Promise<RespostaHttp>;
+export type Transporte = (metodo: 'GET' | 'POST' | 'DELETE', caminho: string, corpo?: unknown, chave?: string) => Promise<RespostaHttp>;
 
 /** Transporte mTLS (identidade institucional-api). Nunca lança: falha de rede/timeout vira { status: null }. */
 export function transporteMtls(cfg: ConfigComercial, timeoutMs = 10_000): Transporte {
@@ -187,4 +187,13 @@ export async function lerEstadoLead(transporte: Transporte, leadId: string) {
   if (!UUID.test(leadId)) return { http: 0, estado: null as string | null };
   const r = await transporte('GET', `${LEAD_PATH}/${leadId}`);
   return { http: r.status, estado: r.status === 200 && typeof r.corpo?.state === 'string' ? (r.corpo.state as string) : null };
+}
+
+/** O Comercial devolve 204 também quando a eliminação já foi aplicada. */
+export async function eliminarLead(transporte: Transporte, leadId: string) {
+  if (!UUID.test(leadId)) return 'nao_confirmada';
+  const resposta = await transporte('DELETE', `${LEAD_PATH}/${leadId}`);
+  if (resposta.status === 204) return 'concluida';
+  if (resposta.status === 409 && resposta.corpo?.code === 'lead_linked') return 'vinculada';
+  return 'nao_confirmada';
 }

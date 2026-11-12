@@ -9,19 +9,19 @@
 
 <div class="corpo">
   <% if (aviso === 'novo') { %>
-    <div class="faixa-alerta">Contato excluído. O lead dele já tinha sido entregue ao Comercial e ficou como <strong>pendência</strong> abaixo: o responsável do Comercial precisa eliminá-lo por lá.</div>
+    <div class="faixa-alerta">Contato excluído no Site. Confirme abaixo a eliminação do pedido correspondente no Comercial.</div>
   <% } else if (aviso === 'concluida') { %>
-    <div class="faixa-alerta">Pendência marcada como concluída.</div>
+    <div class="faixa-alerta">O Comercial confirmou a eliminação do pedido.</div>
+  <% } else if (aviso === 'vinculada') { %>
+    <div class="faixa-alerta">Pedido vinculado a um registro comercial. Encaminhe o código ao responsável pelo tratamento. A pendência continua aberta.</div>
+  <% } else if (aviso === 'nao_confirmada') { %>
+    <div class="faixa-alerta">O Comercial não confirmou a eliminação. A pendência continua aberta para nova tentativa.</div>
   <% } %>
 
   <section class="cartao-admin">
     <h2 class="cartao-admin__titulo">O que fazer</h2>
-    <p class="secundario">O sistema Comercial não permite que o site elimine um lead pela integração (o contrato só prevê criar e consultar). Por isso, quando o site apaga um contato cujo lead já foi entregue, <strong>nada do titular fica aqui</strong>, mas o lead continua no Comercial até alguém eliminá-lo.</p>
-    <ol class="lista-marcada">
-      <li>O responsável do Comercial abre o <strong>painel do Comercial</strong>, localiza o lead pelo <strong>código do lead</strong> da lista abaixo e o elimina por lá.</li>
-      <li>Em seguida, um administrador do site volta a esta tela e clica em <strong>Marcar como concluída</strong>.</li>
-    </ol>
-    <p class="secundario">Quando a eliminação veio de um pedido do titular, concluir dentro do prazo de 15 dias do protocolo. Quando veio da retenção automática de 24 meses, concluir na primeira oportunidade. Se o lead já virou cliente, proposta ou contrato no Comercial, o responsável decide o que pode ser eliminado e registra o motivo no Comercial.</p>
+    <p class="secundario">Use <strong>Eliminar no Comercial</strong> para enviar o pedido pelo código abaixo. A pendência só é encerrada após a confirmação do Comercial.</p>
+    <p class="secundario">Se houver vínculo com um cliente ou uma conversão, localize o código em <strong>Solicitações dos clientes</strong> no Comercial e encaminhe ao responsável pelo tratamento.</p>
   </section>
 
   <div class="tabela-envolvida-admin">
@@ -48,8 +48,8 @@
             </td>
             <td>
               <% if (p.status === 'pendente' && usuario.papel === 'admin') { %>
-                <form method="post" action="/admin/eliminacoes-comercial/<%= p.id %>/concluir" onsubmit="return confirm('Confirma que o lead já foi eliminado no painel do Comercial?')">
-                  <button type="submit" class="botao-admin botao-admin--fantasma">Marcar como concluída</button>
+                <form method="post" action="/admin/eliminacoes-comercial/<%= p.id %>/concluir" data-confirmar="Confirma a eliminação deste pedido no Comercial?">
+                  <button type="submit" class="botao-admin botao-admin--fantasma">Eliminar no Comercial</button>
                 </form>
               <% } %>
             </td>

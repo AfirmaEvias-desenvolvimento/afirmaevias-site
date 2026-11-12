@@ -10,13 +10,14 @@
 // Variáveis: HS_DIR, AUTH_CONSUMERS_DIR, AUTH_INTERNAL_URL, RH_INTERNAL_URL, E2E_HS_PORT, E2E_SITE_PORT.
 // Saída: tabela de verificações no console e .data/e2e/resultado-conexao-1.json. Código de saída 1 se algo falhar.
 import { spawn, execSync } from 'node:child_process';
-import { createHash, randomUUID, X509Certificate } from 'node:crypto';
+import { createHash, randomBytes, randomUUID, X509Certificate } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import https from 'node:https';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import bcrypt from 'bcryptjs';
 import pg from 'pg';
 
 const raiz = resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -85,7 +86,7 @@ async function bancoDescartavel(nome) {
   const pgx = await iniciarPg({ dir, porta, banco: nome });
   pastas.push(dir);
   bancos.push(pgx);
-  return { url: `postgres://comercial:comercial@127.0.0.1:${porta}/${nome}`, porta };
+  return { url: pgx.urls.migracao, porta };
 }
 
 function subirFilho(nome, comando, args, env) {
@@ -111,6 +112,7 @@ const hsVivo = async () => { ultimoHs = await cru('institucional', 'GET', `${HS}
 function subirSite(porta, dbUrl, extra = {}) {
   return subirFilho(`site:${porta}`, process.execPath, ['dist/server.js'], {
     PORT: String(porta), DATABASE_URL: dbUrl, NODE_ENV: 'development', SESSION_SECRET: 's'.repeat(40),
+    RESEND_API_KEY: '',
     COMERCIAL_API_URL: '', COMERCIAL_MTLS_CA: '', COMERCIAL_MTLS_CERT: '', COMERCIAL_MTLS_KEY: '', PORTAL_CLIENTE_URL: undefined, ...extra,
   });
 }
@@ -123,6 +125,8 @@ async function enviarForm(porta, campos) {
 const EMAIL = `e2e-${randomUUID().slice(0, 8)}@exemplo.test`;
 const NOME = 'Maria E2E';
 const CNPJ_BASE = '11222333000181';
+const ADMIN_EMAIL = 'admin-e2e@exemplo.test';
+const ADMIN_SENHA = randomBytes(24).toString('base64url');
 const form = (extra = {}) => ({ nome: NOME, sobrenome: 'Prova', email: EMAIL, telefone: '(41) 99999-0001', empresa: 'Construtora E2E Ltda', cnpj: '11.222.333/0001-81', assunto: 'Controle tecnológico', mensagem: 'Preciso de um orçamento para controle tecnológico de uma obra rodoviária.', consentimento: 'on', origem: 'contato', ...extra });
 
 try {
@@ -135,12 +139,13 @@ try {
 
   titulo('A. Política do AUTH real para a conexão 1');
   const autoriza = (servico, capability, hash) => cru('comercial', 'POST', `${AUTH}/v1/service-authorize-peer`, { app_code: 'comercial', capability, request_id: randomUUID(), service_id: servico, certificate_sha256: hash ?? sha(servico.replace(/-api$/, '')) });
-  for (const cap of ['comercial.lead.create', 'comercial.lead.read']) {
+  const capacidades = ['comercial.lead.create', 'comercial.lead.read', 'comercial.lead.delete'];
+  for (const cap of capacidades) {
     const r = await autoriza('institucional-api', cap);
     ok(`AUTH autoriza institucional-api para ${cap}`, r.status === 200 && r.corpo?.allowed === true, `HTTP ${r.status}`);
   }
   for (const outro of ['ponto-api', 'rh-api', 'comercial-api']) {
-    for (const cap of ['comercial.lead.create', 'comercial.lead.read']) {
+    for (const cap of capacidades) {
       const r = await autoriza(outro, cap);
       ok(`AUTH nega ${outro} para ${cap}`, r.status === 403 || r.status === 401, `HTTP ${r.status} ${r.corpo?.code ?? ''}`);
     }
@@ -155,6 +160,8 @@ try {
   await cx.connect();
   await cx.query(readFileSync(join(raiz, 'db/schema.sql'), 'utf8'));
   const sq = async (sql, p) => (await cx.query(sql, p)).rows;
+  await sq("insert into admin_usuarios (nome, email, senha_hash, papel) values ('Admin E2E', $1, $2, 'admin')",
+    [ADMIN_EMAIL, await bcrypt.hash(ADMIN_SENHA, 4)]);
   const sqlTabela = await sq(`select to_regclass('leads_comercial') t, (select count(*)::int from information_schema.columns where table_name = 'contatos' and column_name = 'cnpj') cnpj`);
   ok('schema do site aplicado (tabela leads_comercial e coluna contatos.cnpj)', !!sqlTabela[0].t && sqlTabela[0].cnpj === 1);
 
@@ -262,6 +269,55 @@ try {
   ok('o Comercial aceitou (empresa = nome da pessoa) e sinalizou cnpj_ausente', f2.status === 'enviado' && l2?.empresa === 'Ana' && JSON.stringify(l2.avisos).includes('cnpj_ausente'), `${f2.status} http=${f2.ultimo_http} ${JSON.stringify(l2?.avisos)}`);
   const erroCnpj = await enviarForm(portaSite, form({ cnpj: '123' }));
   ok('CNPJ preenchido com tamanho errado: o site mostra o erro e NÃO grava', erroCnpj.status === 400 && /Confira o CNPJ/.test(erroCnpj.html), `HTTP ${erroCnpj.status}`);
+
+  titulo('J. Eliminação confirmada pelo Comercial');
+  const origemSite = `http://127.0.0.1:${portaSite}`;
+  const login = await fetch(origemSite + '/admin/login', {
+    method: 'POST', body: new URLSearchParams({ email: ADMIN_EMAIL, senha: ADMIN_SENHA }), redirect: 'manual'
+  });
+  const cookie = login.headers.getSetCookie()[0]?.split(';')[0];
+  if (!cookie) throw new Error('Sessão de admin do Site ausente no teste de eliminação (HTTP ' + login.status + ')');
+  const postarAdmin = (path, cabecalhos = {}) => fetch(origemSite + '/admin' + path, {
+    method: 'POST', headers: { cookie, ...cabecalhos }, redirect: 'manual'
+  });
+  const excluir = await postarAdmin(`/dados/contatos/${contato.id}/excluir`);
+  const [pendencia] = await sq('select id, status from eliminacoes_comercial where lead_id = $1', [lead.id]);
+  ok('exclusão do contato cria pendência pelo código do lead', excluir.status === 302 && pendencia?.status === 'pendente');
+  const concluir = '/eliminacoes-comercial/' + pendencia.id + '/concluir';
+  const outraOrigem = await postarAdmin(concluir, { 'sec-fetch-site': 'same-site' });
+  ok('painel bloqueia solicitação de outra origem', outraOrigem.status === 403);
+  const outraIdentidade = await cru('rh', 'DELETE', `${LEADS}/${lead.id}`);
+  ok('Comercial nega exclusão por outra identidade', outraIdentidade.status === 403);
+  const conferindo = await fetch(origemSite + '/admin/eliminacoes-comercial', { headers: { cookie } });
+  ok('tela exibe código e ação de eliminar no Comercial', (await conferindo.text()).includes('Eliminar no Comercial'));
+
+  await encerrar(hsFilho);
+  const indisponivel = await postarAdmin(concluir);
+  ok('indisponibilidade do Comercial mantém pendência', indisponivel.headers.get('location')?.endsWith('resultado=nao_confirmada') &&
+    (await sq('select status from eliminacoes_comercial where id = $1', [pendencia.id]))[0].status === 'pendente');
+  subirHs(dbHs.url);
+  await ate('listener do HS reiniciado', hsVivo);
+  const confirmacao = await postarAdmin(concluir);
+  ok('admin elimina pelo Site e recebe confirmação do Comercial', confirmacao.headers.get('location')?.endsWith('resultado=concluida') &&
+    (await sq('select status from eliminacoes_comercial where id = $1', [pendencia.id]))[0].status === 'concluida' &&
+    (await hsq('select 1 from leads where id = $1', [lead.id])).length === 0);
+  const repetir = await cru('institucional', 'DELETE', `${LEADS}/${lead.id}`);
+  const recibo = (await hsq('select * from leads_eliminados where lead_id = $1', [lead.id]))[0];
+  ok('repetição retorna 204 e preserva um único recibo sem dados do titular', repetir.status === 204 &&
+    Object.keys(recibo ?? {}).sort().join() === 'chave_hash,eliminado_em,lead_id' &&
+    recibo.chave_hash === createHash('sha256').update(entregue.chave).digest('hex'));
+  const reentrega = await cru('institucional', 'POST', LEADS, {
+    empresa: lead.empresa, contato: { nome: lead.contato_nome, email: lead.contato_email }, privacy_version: lead.privacidade_versao
+  }, { 'idempotency-key': entregue.chave });
+  ok('reenvio tardio recebe 410 e não recria lead apagado', reentrega.status === 410 && reentrega.corpo?.code === 'lead_deleted' &&
+    (await hsq('select 1 from leads where chave = $1', [entregue.chave])).length === 0);
+  await hsq("update leads set status = 'convertida' where id = $1", [f2.lead_id]);
+  await postarAdmin(`/dados/contatos/${f2.contato_id}/excluir`);
+  const [pendenciaVinculada] = await sq('select id from eliminacoes_comercial where lead_id = $1', [f2.lead_id]);
+  const vinculada = await postarAdmin('/eliminacoes-comercial/' + pendenciaVinculada.id + '/concluir');
+  ok('lead convertido preserva pendência e registro comercial', vinculada.headers.get('location')?.endsWith('resultado=vinculada') &&
+    (await sq('select status from eliminacoes_comercial where id = $1', [pendenciaVinculada.id]))[0].status === 'pendente' &&
+    (await hsq('select status from leads where id = $1', [f2.lead_id]))[0].status === 'convertida');
   void CNPJ_BASE;
 } catch (e) {
   ok(`execução interrompida: ${e.message}`, false);

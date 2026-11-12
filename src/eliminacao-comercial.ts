@@ -1,13 +1,15 @@
 // Eliminação LGPD x lead já entregue ao Comercial (conexão 1, C12).
 //
-// O contrato do Comercial só tem comercial.lead.create/read: NÃO existe exclusão. Então, quando o site apaga um contato
-// cujo lead já foi entregue, o lead continua lá e alguém do Comercial precisa eliminá-lo pelo painel dele. Este módulo
-// guarda essa obrigação como PENDÊNCIA (tabela eliminacoes_comercial, sem dado pessoal) e a lista no /admin.
+// O painel confirma a eliminação com o Comercial por mTLS antes de encerrar a pendência. A tabela guarda só o código
+// do lead e dados de auditoria, sem copiar dados do titular.
 //
 // A pendência nasce no banco, num gatilho BEFORE DELETE em `contatos` (db/schema.sql), não aqui: assim vale para qualquer
 // caminho que apague o contato (painel, retenção de 24 meses, SQL manual) e sempre na mesma transação do DELETE.
 import type { PoolClient } from 'pg';
 import { pool, consultar, consultarUm, contar } from './db.js';
+import { eliminarLead, type Transporte } from './comercial.js';
+import { registrarAuditoria } from './audit.js';
+import type { UsuarioAdmin } from './auth.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -72,13 +74,33 @@ export async function listarPendencias(): Promise<Pendencia[]> {
 export const contarPendenciasAbertas = () =>
   contar(`SELECT count(*) AS total FROM eliminacoes_comercial WHERE status = 'pendente'`);
 
-/** Marca como concluída (o responsável do Comercial já eliminou o lead lá). Só sai de 'pendente'; devolve o lead_id. */
-export async function concluirPendencia(id: string, usuarioId: string) {
-  if (!UUID.test(id) || !UUID.test(usuarioId)) return null;
-  const linha = await consultarUm<{ lead_id: string }>(
-    `UPDATE eliminacoes_comercial SET status = 'concluida', concluida_em = now(), concluida_por = $2
-      WHERE id = $1 AND status = 'pendente' RETURNING lead_id`,
-    [id, usuarioId]
-  );
-  return linha?.lead_id ?? null;
+/** Uma resposta perdida pode ser repetida sem recriar o lead nem mudar quem concluiu a pendência. */
+export async function concluirPendencia(id: string, usuario: Pick<UsuarioAdmin, 'id' | 'email'>, transporte?: Transporte, ip?: string) {
+  if (!UUID.test(id) || !UUID.test(usuario.id)) return 'nao_encontrada';
+  const linha = await consultarUm<{ lead_id: string; status: Pendencia['status'] }>(
+    'SELECT lead_id, status FROM eliminacoes_comercial WHERE id = $1', [id]);
+  if (!linha) return 'nao_encontrada';
+  if (linha.status === 'concluida') return 'concluida';
+  if (!transporte) return 'nao_confirmada';
+  const estado = await eliminarLead(transporte, linha.lead_id);
+  if (estado !== 'concluida') return estado;
+  const cliente = await pool.connect();
+  try {
+    await cliente.query('BEGIN');
+    const gravada = await cliente.query(
+      `UPDATE eliminacoes_comercial SET status = 'concluida', concluida_em = now(), concluida_por = $2
+        WHERE id = $1 AND status = 'pendente'`, [id, usuario.id]);
+    if (gravada.rowCount) {
+      await registrarAuditoria({
+        usuario, acao: 'eliminacao_comercial.concluida', entidade: 'eliminacoes_comercial', entidadeId: id, ip
+      }, cliente);
+    }
+    await cliente.query('COMMIT');
+    return estado;
+  } catch (falha) {
+    await cliente.query('ROLLBACK').catch(() => {});
+    throw falha;
+  } finally {
+    cliente.release();
+  }
 }

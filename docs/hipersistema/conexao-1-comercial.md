@@ -25,7 +25,7 @@ Já no topo e no rodapé (`PORTAL_CLIENTE_URL`, https; vazio desliga).
 
 ## Prova
 
-`npm run e2e:conexao-1` (51 verificações): site real + listener real do Comercial HS em bancos descartáveis, AUTH e RH reais. Requer AUTH em 9446 e RH em 9545 no ar e o repositório do Comercial HS ao lado (`HS_DIR`).
+`npm run e2e:conexao-1` exercita o Site e o listener do Comercial HS com bancos descartáveis, usando AUTH e RH por mTLS. Requer a capacidade de eliminação no AUTH, disponível na porta 9446 por padrão, e o RH na porta 9545. O repositório do Comercial HS fica ao lado ou é indicado em `HS_DIR`.
 
 ## Política de Privacidade (versão 1.2, 06/11/2026) — TEXTO PROPOSTO, REVISAR COM O JURÍDICO
 
@@ -37,16 +37,16 @@ O dono autorizou ("pode criar") o texto que faltava. Está em `src/content.ts` (
 
 ## Eliminação LGPD de lead já entregue (pendência no Comercial)
 
-O contrato C12 linha 1 só tem `comercial.lead.create/read`: **não há exclusão**, e o contrato não foi alterado. O tratamento dentro dele:
+O contrato C12 usa `DELETE /api/integracao/v1/comercial/leads/:id` com a capacidade `comercial.lead.delete`. O Site envia apenas o UUID do lead. A resposta 204 confirma a exclusão ou uma repetição. Um lead vinculado a cliente ou convertido retorna 409 `lead_linked` para análise comercial. O Comercial mantém um comprovante com UUID, data e hash da chave de entrega, suficiente para impedir que um reenvio recrie o lead.
 
 - Tabela `eliminacoes_comercial` (`db/schema.sql`): `lead_id` (UUID devolvido pelo Comercial), `pedido_em`, `origem` (`painel` | `retencao`), `registrado_por` (UUID do operador do painel; nulo na retenção), `status` (`pendente` | `concluida`), `concluida_em`, `concluida_por`. **Nenhum dado pessoal** (nem nome, e-mail, telefone, CNPJ, mensagem ou IP); há teste no schema e no banco real.
 - Gatilho `BEFORE DELETE` em `contatos`: se o contato tem fila com `lead_id` preenchido (lead entregue), cria a pendência **na mesma transação**, antes de o contato sumir. Vale para a exclusão pelo painel, para a retenção de 24 meses (`regras-retencao.ts` não mudou) e para SQL manual. Fila pendente ou rejeitada (sem `lead_id`) não gera pendência.
-- Painel: a exclusão de contato passa por `excluirContatoPeloPainel` (transação que informa quem pediu) e a auditoria ganha `pendenciaEliminacaoComercial`. Nova tela `/admin/eliminacoes-comercial` (menu Privacidade, faixa no painel inicial) lista as pendências com a instrução: o responsável do Comercial localiza o lead pelo código no **painel do Comercial**, elimina, e um administrador do site marca **concluída** (também auditado).
+- Painel: a exclusão de contato passa por `excluirContatoPeloPainel` (transação que informa quem pediu) e a auditoria ganha `pendenciaEliminacaoComercial`. Em `/admin/eliminacoes-comercial`, o administrador usa **Eliminar no Comercial**. O Site conclui e audita a pendência após receber 204. Falha ou vínculo comercial preserva a pendência para nova tentativa ou análise.
 - Corrida rara: se o contato for apagado enquanto o envio estava em andamento e o Comercial aceitar o lead depois, `comercial-fila.ts` registra a pendência com o `lead_id` recebido (`registrarPendenciaOrfa`).
 
 Prazo: pedido de titular tem 15 dias (protocolo); a pendência deve ser concluída dentro dele. Se o lead já virou cliente/proposta/contrato no Comercial, quem decide o que eliminar é o responsável de lá.
 
-**Limites conhecidos:** (1) a eliminação no Comercial continua **manual** até o contrato ganhar uma operação de exclusão (decisão do dono para depois); (2) se uma entrega foi aceita pelo Comercial mas a resposta se perdeu (rede) e o contato foi apagado antes da retentativa, o site não conhece o `lead_id` e não consegue criar a pendência; o Comercial identifica pelo `Idempotency-Key` `site-contato:<id>`, que não é guardado após a exclusão; (3) as pendências não têm descarte automático (não carregam dado pessoal).
+**Limites conhecidos:** Se a entrega original foi aceita e sua resposta se perdeu antes de o Site obter o `lead_id`, a exclusão imediata do contato não gera pendência pelo UUID do lead. O Comercial identifica essa entrega pelo `Idempotency-Key` `site-contato:<id>`. As pendências guardam somente os dados técnicos e os operadores da ação e não têm descarte automático.
 
 ## Pendências (decisão do dono)
 
