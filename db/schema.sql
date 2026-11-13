@@ -287,16 +287,6 @@ CREATE OR REPLACE FUNCTION integracao_area(a TEXT) RETURNS TEXT AS $fn$
   SELECT (SELECT slug FROM integracao_areas WHERE slug = integracao_slug(a))
 $fn$ LANGUAGE sql STABLE;
 
--- Acao do painel -> {categoria, acao} do contrato; null = nao entra no feed (login, senha, usuarios, relatos, LGPD...).
-CREATE OR REPLACE FUNCTION integracao_admin_acao(p_acao TEXT, p_entidade TEXT) RETURNS TEXT[] AS $fn$
-  SELECT CASE
-    WHEN p_entidade = 'candidaturas' AND p_acao = 'registro.atualizado' THEN ARRAY['recruitment', 'updated']
-    WHEN p_entidade = 'candidaturas' AND p_acao = 'registro.excluido'   THEN ARRAY['recruitment', 'closed']
-    WHEN p_entidade = 'contatos'     AND p_acao = 'registro.atualizado' THEN ARRAY['general_service', 'updated']
-    WHEN p_entidade = 'contatos'     AND p_acao = 'registro.excluido'   THEN ARRAY['general_service', 'closed']
-    ELSE NULL END
-$fn$ LANGUAGE sql IMMUTABLE;
-
 CREATE OR REPLACE FUNCTION integracao_ts(t TIMESTAMPTZ) RETURNS TEXT AS $fn$
   SELECT to_char(t AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')
 $fn$ LANGUAGE sql IMMUTABLE;
@@ -352,36 +342,22 @@ $fn$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS candidaturas_integracao ON candidaturas;
 CREATE TRIGGER candidaturas_integracao AFTER INSERT OR UPDATE OF status OR DELETE ON candidaturas
   FOR EACH ROW EXECUTE FUNCTION integracao_trg_candidatura();
-
--- Atividade administrativa por categoria. O site NAO tem identidade AUTH nem pessoa RH: ator e pessoa saem null e o
--- e-mail/IP de quem agiu NUNCA vai ao feed.
-CREATE OR REPLACE FUNCTION integracao_trg_auditoria() RETURNS trigger AS $fn$
-DECLARE agg TEXT; m TEXT[]; v INTEGER;
-BEGIN
-  IF TG_OP = 'DELETE' THEN
-    agg := 'admin_action:' || OLD.id;
-    SELECT version + 1 INTO v FROM integracao_versoes WHERE aggregate_id = agg AND NOT deleted;
-    IF v IS NOT NULL THEN
-      PERFORM integracao_emitir('institucional.admin_action.recorded.v1', agg, OLD.id::text, v, 'delete', '{}'::jsonb, now());
-    END IF;
-    RETURN OLD;
-  END IF;
-  m := integracao_admin_acao(NEW.acao, NEW.entidade);
-  IF m IS NOT NULL THEN
-    PERFORM integracao_emitir('institucional.admin_action.recorded.v1', 'admin_action:' || NEW.id, NEW.id::text, 1, 'upsert',
-      jsonb_build_object('category', m[1], 'action', m[2], 'historical_snapshot', false), NEW.criado_em);
-  END IF;
-  RETURN NEW;
-END
-$fn$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS auditoria_integracao ON auditoria;
-CREATE TRIGGER auditoria_integracao AFTER INSERT OR DELETE ON auditoria
-  FOR EACH ROW EXECUTE FUNCTION integracao_trg_auditoria();
-
 -- Linhas que ja existiam antes do feed: entram so pelo snapshot (versao 1), sem evento retroativo no outbox.
 INSERT INTO integracao_versoes (aggregate_id, version)
   SELECT 'application:' || c.id, 1 FROM candidaturas c ON CONFLICT DO NOTHING;
-INSERT INTO integracao_versoes (aggregate_id, version)
-  SELECT 'admin_action:' || a.id, 1 FROM auditoria a WHERE integracao_admin_acao(a.acao, a.entidade) IS NOT NULL
-  ON CONFLICT DO NOTHING;
+
+-- Decisao do dono: o Institucional envia SOMENTE as candidaturas (curriculos como evento). A atividade administrativa
+-- (institucional.admin_action.recorded.v1) deixou de ser gerada. Esta limpeza e idempotente e roda a cada deploy:
+-- 1) tombstone (sem conteudo) para cada acao administrativa que ja tenha ido ao feed, para o RH esquecer essas acoes (nao deixar fato orfao);
+-- 2) remove o trigger e as funcoes da auditoria; a barreira de versao (deleted) fica, sem dado pessoal.
+DO $limpeza$
+DECLARE r RECORD;
+BEGIN
+  FOR r IN SELECT aggregate_id, version FROM integracao_versoes WHERE aggregate_id LIKE 'admin_action:%' AND NOT deleted ORDER BY aggregate_id LOOP
+    PERFORM integracao_emitir('institucional.admin_action.recorded.v1', r.aggregate_id, substr(r.aggregate_id, 14), r.version + 1, 'delete', '{}'::jsonb, now());
+  END LOOP;
+END
+$limpeza$;
+DROP TRIGGER IF EXISTS auditoria_integracao ON auditoria;
+DROP FUNCTION IF EXISTS integracao_trg_auditoria();
+DROP FUNCTION IF EXISTS integracao_admin_acao(TEXT, TEXT);

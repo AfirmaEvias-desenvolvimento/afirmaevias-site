@@ -165,25 +165,24 @@ test(
         semPii(c);
       });
 
-      await t.test('atividade administrativa: só categoria/ação; login e senha não entram; e-mail de quem agiu nunca sai', async () => {
+      await t.test('só candidaturas: ações do painel (auditoria) não geram evento algum e não há trigger de auditoria', async () => {
         const ins = (acao: string, entidade: string | null) =>
           q(`INSERT INTO auditoria (usuario_email, acao, entidade, entidade_id, detalhes, ip) VALUES ('adm@exemplo.test', $1, $2, 'x', '{"status":"novo"}', '1.2.3.4')`, [acao, entidade]);
-        await ins('login.ok', null);
-        await ins('senha.alterada', null);
-        await ins('registro.atualizado', 'relatos_integridade'); // relato de integridade: proibido
-        await ins('registro.atualizado', 'solicitacoes_lgpd'); // portal do titular: proibido
-        await ins('registro.atualizado', 'candidaturas');
-        await ins('registro.excluido', 'contatos');
+        for (const [a, e] of [['login.ok', null], ['registro.atualizado', 'candidaturas'], ['registro.excluido', 'contatos'], ['registro.atualizado', 'relatos_integridade']] as const) await ins(a, e);
         const c = await lote();
-        assert.deepEqual(
-          c.items.map((e: any) => [e.event_type, e.payload.category, e.payload.action, e.person_id, e.actor_auth_user_id]),
-          [
-            ['institucional.admin_action.recorded.v1', 'recruitment', 'updated', null, null],
-            ['institucional.admin_action.recorded.v1', 'general_service', 'closed', null, null]
-          ]
-        );
-        semPii(c);
+        assert.deepEqual(c.items, []);
+        assert.equal((await q(`SELECT 1 FROM pg_trigger WHERE tgname = 'auditoria_integracao'`)).length, 0);
       });
+
+      await t.test('migration: ações administrativas que já tinham ido ao feed recebem tombstone uma única vez', async () => {
+        await q(`INSERT INTO integracao_versoes (aggregate_id, version) VALUES ('admin_action:777', 1)`);
+        await pool.query(schema);
+        const c = await lote();
+        assert.deepEqual(c.items.map((e: any) => [e.event_type, e.operation, e.aggregate_id, e.aggregate_version, e.payload]), [['institucional.admin_action.recorded.v1', 'delete', 'admin_action:777', 2, {}]]);
+        await pool.query(schema);
+        assert.deepEqual((await lote()).items, [], 'idempotente');
+      });
+
 
       await t.test('exclusão (retenção, painel ou LGPD) gera tombstone sem conteúdo, com versão maior', async () => {
         const id = await nova();
@@ -251,8 +250,7 @@ test(
         }
         assert.ok(paginas > 1);
         const vivasAgora = await q(`SELECT count(*)::int AS n FROM candidaturas`);
-        const adminAgora = await q(`SELECT count(*)::int AS n FROM auditoria WHERE integracao_admin_acao(acao, entidade) IS NOT NULL`);
-        assert.equal(todas.length, vivasAgora[0].n + adminAgora[0].n);
+        assert.equal(todas.length, vivasAgora[0].n);
         assert.equal(new Set(todas.map((e) => e.event_id)).size, todas.length);
         assert.ok(todas.every((e) => e.payload.historical_snapshot === true && e.operation === 'upsert'));
         semPii(todas);
@@ -316,7 +314,7 @@ test(
         assert.equal(rel.partitions.reduce((n: number, p: any) => n + p.count, 0), c.vivos().length);
         const porParticao = new Map<string, number>();
         for (const x of c.vivos()) {
-          const k = x.e.event_type.includes('admin_action') ? `admin_action/${x.e.payload.category}` : `application/${x.e.payload.status}`;
+          const k = `application/${x.e.payload.status}`;
           porParticao.set(k, (porParticao.get(k) ?? 0) + 1);
         }
         assert.deepEqual(Object.fromEntries(rel.partitions.map((p: any) => [p.partition, p.count])), Object.fromEntries(porParticao));

@@ -94,15 +94,7 @@ const ESTADO_ATUAL = `
            'treatment_version', coalesce((SELECT valor FROM integracao_config WHERE chave = 'privacidade_versao'), 'nao-registrada'),
            'consent_reference', CASE WHEN c.consentimento THEN 'site:candidatura:' || c.id ELSE NULL END,
            'historical_snapshot', true) AS payload
-    FROM candidaturas c LEFT JOIN integracao_versoes v ON v.aggregate_id = 'application:' || c.id
-  UNION ALL
-  SELECT 'admin_action:' || a.id, a.id::text, coalesce(v.version, 1),
-         'institucional.admin_action.recorded.v1', a.criado_em,
-         'admin_action/' || (integracao_admin_acao(a.acao, a.entidade))[1],
-         jsonb_build_object('category', (integracao_admin_acao(a.acao, a.entidade))[1],
-           'action', (integracao_admin_acao(a.acao, a.entidade))[2], 'historical_snapshot', true)
-    FROM auditoria a LEFT JOIN integracao_versoes v ON v.aggregate_id = 'admin_action:' || a.id
-   WHERE integracao_admin_acao(a.acao, a.entidade) IS NOT NULL`;
+    FROM candidaturas c LEFT JOIN integracao_versoes v ON v.aggregate_id = 'application:' || c.id`;
 
 export function criarProdutor(pool: Pool, chaveCursor: string) {
   const codec = codecCursor(chaveCursor);
@@ -122,7 +114,7 @@ export function criarProdutor(pool: Pool, chaveCursor: string) {
       return transacao(pool, async (c) => {
         const { sequencia, retida } = await ponta(c);
         if (desde < retida || desde > sequencia) throw expirado();
-        const { rows } = await c.query('SELECT sequence::text AS sequence, event FROM integracao_outbox WHERE sequence > $1 AND sequence <= $2 ORDER BY sequence LIMIT $3', [desde.toString(), sequencia.toString(), max + 1]);
+        const { rows } = await c.query('SELECT sequence::text AS sequence, event FROM integracao_outbox WHERE sequence > $1 AND sequence <= $2 ORDER BY integracao_outbox.sequence LIMIT $3', [desde.toString(), sequencia.toString(), max + 1]);
         const pagina = rows.slice(0, max);
         const ultima = pagina.length ? BigInt(pagina[pagina.length - 1].sequence) : desde;
         return resposta('ChangesResponse', {

@@ -1,7 +1,7 @@
 # Feed do Institucional para o RH (produtor, AEVIAS-HIPERSISTEMA-1.0)
 
 O site é **produtor** da origem `institucional` do RH: o coletor do RH (`rh-collector`) puxa, por mTLS, candidaturas
-mínimas e atividade administrativa por categoria. O site nunca chama o RH. Desligado por padrão: sem `INTEGRACAO_PORT`
+mínimas (o evento da candidatura, nunca o arquivo do currículo). O site nunca chama o RH. Desligado por padrão: sem `INTEGRACAO_PORT`
 nada sobe e o site funciona como antes.
 
 ## Endpoints (listener mTLS próprio, sem rotas do site nem do /admin)
@@ -21,8 +21,8 @@ e nega em qualquer dúvida (fail-closed, sem cache positivo).
 
 ## O que é preciso para ligar (registro/certificados ficam com quem cuida do registry e do rh-collector)
 
-1. **Porta mTLS interna do site**: sugerida `4807` (a sequência local é rh 4801, sl 4802, projetos 4803, nps 4804,
-   comercial 4805, laboratorio 4806), em `127.0.0.1`. `base_url` da origem no RH: `https://127.0.0.1:4807` (ou o host
+1. **Porta mTLS interna do site**: `13809` no ecossistema local (ao lado da 13808 HTTP do site-app; a sequência de portas internas 48xx não é usada aqui),
+   em `127.0.0.1`. `base_url` da origem no RH: `https://localhost:13809` (ou o host
    do certificado do servidor).
 2. **Capacidades no AUTH**: `rh-collector` com `feed.read` e `capabilities.read` para o app `institucional`, e a
    identidade `institucional-api` registrada (com capacidade `service.authorize`) para o site consultar o AUTH. O
@@ -44,13 +44,12 @@ e nega em qualquer dúvida (fail-closed, sem cache positivo).
 |---|---|---|
 | `institucional.application.received.v1` | candidatura recebida | `status`, `area_code`, `treatment_version`, `consent_reference`, `historical_snapshot` |
 | `institucional.application.status_changed.v1` | mudança de status que altera o estado do contrato | idem; versão +1 |
-| `institucional.admin_action.recorded.v1` | ação no painel sobre candidatura/contato | `category` (`recruitment` ou `general_service`), `action` (`updated`/`closed`) |
-| qualquer um, `operation=delete` | candidatura excluída (painel, LGPD, retenção de 12 meses) ou ação de auditoria expurgada | só ids, versão e datas; `payload` vazio |
+| qualquer um, `operation=delete` | candidatura excluída (painel, LGPD, retenção de 12 meses) | só ids, versão e datas; `payload` vazio |
 
 Mapa de status: `novo` -> `received`; `em análise`/`entrevista` -> `screening`; `descartado`/`banco de talentos` ->
 `closed`. `linked` e `withdrawn` não são gerados (o site não vincula a vaga/pessoa nem registra desistência).
-`aggregate_id` = `application:<uuid>` ou `admin_action:<id>`; `source_id` = o uuid/id opaco. `person_id` e
-`actor_auth_user_id` são sempre `null` (candidato é externo e o painel do site não tem identidade AUTH); o RH já aceita
+`aggregate_id` = `application:<uuid>`; `source_id` = o uuid opaco. `person_id` e
+`actor_auth_user_id` são sempre `null` (candidato é externo); o RH já aceita
 isso para `institucional`.
 
 ## LGPD / minimização
@@ -70,7 +69,7 @@ tombstone e remove o item correspondente de snapshots ainda não consumidos; fic
   (409 se o corpo mudar). Linhas anteriores ao feed entram só por snapshot (versão 1).
 - Retenção técnica do outbox: 90 dias (`expurgar`, a cada 6 h); cursor mais antigo, forjado ou de outra chave = 410
   `cursor_expired` e o RH refaz o snapshot.
-- Reconciliação: contagens e SHA-256 por partição (`application/<status>`, `admin_action/<categoria>`) sobre ids
+- Reconciliação: contagens e SHA-256 por partição (`application/<status>`) sobre ids
   opacos, versão e estado, calculados na mesma visão do snapshot.
 
 ## Testes
@@ -78,3 +77,7 @@ tombstone e remove o item correspondente de snapshots ainda não consumidos; fic
 `npm test` (tsc + `node --test`): `src/integracao-feed.test.ts` sobe um Postgres embutido descartável (do repositório
 `aevias_comercial_HS`; pula se ausente) e um listener mTLS real com certificados do openssl; um consumidor que replica
 as regras do coletor do RH prova bootstrap + delta + tombstone + reconciliação.
+
+## Escopo: só candidaturas (decisão do dono)
+
+O Institucional envia SOMENTE as candidaturas. `institucional.admin_action.recorded.v1` deixou de ser gerado: o trigger e as funções da auditoria foram removidos pela migration (`db/schema.sql`, idempotente), que antes emite um tombstone para cada ação administrativa que já tivesse ido ao feed, para o RH não ficar com fato órfão. Currículo = o evento da candidatura; o contrato (`payload`: status, area_code, treatment_version, consent_reference) não pede o conteúdo do arquivo.
