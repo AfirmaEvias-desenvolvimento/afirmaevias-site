@@ -4,7 +4,6 @@ import { config } from '../config.js';
 import * as conteudo from '../content.js';
 import { assinaturaConfere, emailValido, gerarProtocolo, hashIp, limpar } from '../utils.js';
 import { registrarAuditoria } from '../audit.js';
-import { avisarEquipe } from '../notificacoes.js';
 import { chaveDoContato, comercialLigado, processarFilaComercial } from '../comercial-fila.js';
 
 const limite = { config: { rateLimit: { max: 8, timeWindow: '10 minutes' } } };
@@ -83,15 +82,6 @@ export async function rotasFormularios(app: FastifyInstance) {
     );
     if (ligado) void processarFilaComercial();
 
-    void avisarEquipe({
-      tipo: 'contato',
-      // Minimização (LGPD, art. 6º III): o e-mail avisa e manda abrir o
-      // painel. Antes levava nome, e-mail, telefone e mensagem inteira para a
-      // caixa compartilhada e para a Resend, sem prazo de descarte.
-      assunto: 'Novo contato recebido pelo site',
-      linhas: [['Conteúdo', 'Não enviado por e-mail. Leia no painel, com acesso controlado.']],
-      caminhoAdmin: '/admin/dados/contatos'
-    });
 
     return reply.view(pagina, {
       titulo: 'Mensagem enviada | Afirma E-vias',
@@ -190,15 +180,6 @@ export async function rotasFormularios(app: FastifyInstance) {
       ]
     );
 
-    void avisarEquipe({
-      tipo: 'candidatura',
-      assunto: 'Novo currículo recebido pelo site',
-      linhas: [
-        ['Área', valores.area || 'não informada'],
-        ['Conteúdo', 'Não enviado por e-mail. Leia no painel, com acesso controlado.']
-      ],
-      caminhoAdmin: '/admin/dados/candidaturas'
-    });
 
     return reply.view('pages/vagas', {
       titulo: 'Currículo recebido | Afirma E-vias',
@@ -216,6 +197,7 @@ export async function rotasFormularios(app: FastifyInstance) {
     const corpo = request.body as Record<string, string>;
     const anonimo = corpo.anonimo !== 'nao';
     const valores = {
+      anonimo,
       titulo: limpar(corpo.titulo, 200),
       categoria: limpar(corpo.categoria, 80),
       relato: limpar(corpo.relato, 8000),
@@ -248,17 +230,6 @@ export async function rotasFormularios(app: FastifyInstance) {
       [protocolo, valores.titulo, valores.relato, valores.categoria, anonimo, valores.nome || null, valores.email || null]
     );
 
-    void avisarEquipe({
-      tipo: 'relato',
-      assunto: `Novo relato de integridade ${protocolo}`,
-      linhas: [
-        ['Protocolo', protocolo],
-        ['Categoria', valores.categoria || 'não informada'],
-        ['Identificação', anonimo ? 'anônimo' : 'identificado'],
-        ['Conteúdo', 'Não enviado por e-mail. Leia no painel, com acesso controlado.']
-      ],
-      caminhoAdmin: '/admin/dados/relatos'
-    });
 
     return reply.view('pages/integridade', {
       titulo: 'Relato registrado | Afirma E-vias',
@@ -311,16 +282,6 @@ export async function rotasFormularios(app: FastifyInstance) {
       [protocolo, valores.tipo, valores.nome, valores.email, valores.documento, valores.detalhes, request.ip]
     );
 
-    void avisarEquipe({
-      tipo: 'lgpd',
-      assunto: `Pedido LGPD ${protocolo} — prazo de 15 dias`,
-      linhas: [
-        ['Protocolo', protocolo],
-        ['Pedido', valores.tipo],
-        ['Conteúdo', 'Não enviado por e-mail. Leia no painel, com acesso controlado.']
-      ],
-      caminhoAdmin: '/admin/dados/lgpd'
-    });
 
     return reply.view('pages/lgpd', {
       titulo: 'Solicitação registrada | Afirma E-vias',

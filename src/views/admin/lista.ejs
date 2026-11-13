@@ -47,7 +47,7 @@
         </thead>
         <tbody>
           <% registros.forEach(function (registro) { %>
-            <tr onclick="location.href='/admin/dados/<%= colecao.chave %>/<%= registro.id %>'">
+            <tr data-registro>
               <% colecao.colunasLista.forEach(function (coluna) { %>
                 <td>
                   <% const valor = registro[coluna.campo]; %>

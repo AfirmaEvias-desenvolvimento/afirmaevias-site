@@ -97,7 +97,10 @@ recurso('tema', () => {
       rotular();
     };
 
-    if (reduzirMovimento || typeof document.startViewTransition !== 'function') {
+    if (
+      reduzirMovimento || document.activeViewTransition ||
+      typeof document.startViewTransition !== 'function'
+    ) {
       aplicar();
       return;
     }
@@ -117,7 +120,9 @@ recurso('tema', () => {
         );
       })
       .catch(() => {});
-    transicao.finished.finally(() => raiz.classList.remove('trocando-tema'));
+    transicao.finished
+      .catch(() => {})
+      .finally(() => raiz.classList.remove('trocando-tema'));
   });
 
   sistemaEscuro.addEventListener('change', rotular);

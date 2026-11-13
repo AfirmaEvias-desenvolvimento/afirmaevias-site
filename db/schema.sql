@@ -361,3 +361,33 @@ $limpeza$;
 DROP TRIGGER IF EXISTS auditoria_integracao ON auditoria;
 DROP FUNCTION IF EXISTS integracao_trg_auditoria();
 DROP FUNCTION IF EXISTS integracao_admin_acao(TEXT, TEXT);
+
+-- Avisos sem cópia de dados do formulário; o gatilho participa da transação do registro.
+CREATE TABLE IF NOT EXISTS avisos_email_fila (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tipo TEXT NOT NULL CHECK (tipo IN ('contato','candidatura','relato','lgpd')),
+  origem_id UUID NOT NULL,
+  tentativas INTEGER NOT NULL DEFAULT 0,
+  proxima_tentativa TIMESTAMPTZ NOT NULL DEFAULT now(),
+  reserva UUID,
+  criado_em TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(tipo, origem_id)
+);
+CREATE INDEX IF NOT EXISTS idx_avisos_email_fila ON avisos_email_fila (proxima_tentativa);
+CREATE OR REPLACE FUNCTION fila_aviso_formulario() RETURNS trigger AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO avisos_email_fila(tipo, origem_id) VALUES (TG_ARGV[0], NEW.id);
+    RETURN NEW;
+  END IF;
+  DELETE FROM avisos_email_fila WHERE tipo = TG_ARGV[0] AND origem_id = OLD.id;
+  RETURN OLD;
+END; $$ LANGUAGE plpgsql;
+DROP TRIGGER IF EXISTS avisos_email ON contatos;
+CREATE TRIGGER avisos_email AFTER INSERT OR DELETE ON contatos FOR EACH ROW EXECUTE FUNCTION fila_aviso_formulario('contato');
+DROP TRIGGER IF EXISTS avisos_email ON candidaturas;
+CREATE TRIGGER avisos_email AFTER INSERT OR DELETE ON candidaturas FOR EACH ROW EXECUTE FUNCTION fila_aviso_formulario('candidatura');
+DROP TRIGGER IF EXISTS avisos_email ON relatos_integridade;
+CREATE TRIGGER avisos_email AFTER INSERT OR DELETE ON relatos_integridade FOR EACH ROW EXECUTE FUNCTION fila_aviso_formulario('relato');
+DROP TRIGGER IF EXISTS avisos_email ON solicitacoes_lgpd;
+CREATE TRIGGER avisos_email AFTER INSERT OR DELETE ON solicitacoes_lgpd FOR EACH ROW EXECUTE FUNCTION fila_aviso_formulario('lgpd');

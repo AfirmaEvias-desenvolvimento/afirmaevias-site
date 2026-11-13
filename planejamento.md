@@ -97,6 +97,16 @@ Há tabelas `admin_usuarios`, `admin_sessoes`, `contatos`, `candidaturas`, `rela
 
 **Entrega `INSTITUCIONAL_INTEGRATED_V1`:** painel centralizado, público anônimo com dependência técnica explícita, DB isolado, feed e recrutamento mínimos consumidos pelo RH, restauração exercitada e ausência de fallback local.
 
+## I07 — Institucional → Comercial (C12 conexão 1)
+
+O site é a **origem**; o Comercial, em produção e com repositório congelado, é o destino. O site nunca depende do Comercial para funcionar.
+
+- [ ] **Link "Área do cliente":** já existe alteração local, sem commit, em `src/config.ts`, `src/server.ts` e `src/views/partials/topo.ejs` (variável `PORTAL_CLIENTE_URL`; vazia, nada muda). Revisar, testar com e sem a variável e publicar só com autorização do dono. É apenas um link: sem iframe, sem sessão compartilhada.
+- [ ] **Pedido de orçamento (futuro):** formulário público com aviso de privacidade versionado, gravado no banco do site e enviado por outbox a `comercial.lead.create` (mTLS + `service-authorize`). Comercial parado deixa o pedido pendente; o visitante recebe a confirmação do site, não do Comercial. Ligar só quando o Comercial implementar a rota, o que depende de liberação do dono.
+- [ ] Relatos de integridade, currículos e dados do canal do titular **nunca** vão ao Comercial.
+
+**Aceite:** site sem a variável fica idêntico ao atual; com a variável, o link abre o portal; pedido de orçamento simulado é entregue uma vez mesmo com reenvio e o site funciona com o Comercial fora do ar.
+
 ## Instrução de execução
 
 Executar I01 → I02 → I03 → I04 → I05 → I06, mantendo checkpoints revisáveis. Implementar/testar com dados fictícios até os gates de ambiente real. Não pedir nova definição de arquitetura; se faltarem domínio, certificado ou credencial, concluir software/testes locais, registrar o item exato no preflight e não fabricar configuração de produção. Os demais sistemas dos desenhos continuam fora do escopo desta entrega.

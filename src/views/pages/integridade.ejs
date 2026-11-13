@@ -56,8 +56,8 @@
 
         <fieldset class="opcoes">
           <legend class="campo__rotulo">Como você quer enviar</legend>
-          <label class="opcao"><input type="radio" name="anonimo" value="sim" checked><span>Anônimo</span></label>
-          <label class="opcao"><input type="radio" name="anonimo" value="nao"><span>Quero me identificar</span></label>
+          <label class="opcao"><input type="radio" name="anonimo" value="sim"<%= valores.anonimo !== false ? ' checked' : '' %>><span>Anônimo</span></label>
+          <label class="opcao"><input type="radio" name="anonimo" value="nao"<%= valores.anonimo === false ? ' checked' : '' %>><span>Quero me identificar</span></label>
         </fieldset>
 
         <div class="identificacao" hidden>

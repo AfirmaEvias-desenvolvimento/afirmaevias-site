@@ -1,69 +1,72 @@
-// Aviso por e-mail de que chegou algo nos formularios. Sem isto, contato,
-// curriculo, relato e pedido LGPD so existem para quem abre o /admin - e o
-// pedido LGPD tem prazo legal de 15 dias correndo.
-//
-// Usa a API HTTP da Resend via fetch nativo: nenhuma dependencia nova. Sem
-// RESEND_API_KEY configurada o envio e ignorado com um aviso no log, entao o
-// site funciona igual antes ate a chave existir.
+// Fila persistente: o banco grava o aviso na mesma transação do formulário.
+// O corpo nunca copia nome, mensagem, currículo ou dados do titular.
+import { pool } from './db.js';
 import { config, producao } from './config.js';
 
-const CHAVE = process.env.RESEND_API_KEY ?? '';
-const REMETENTE = process.env.EMAIL_REMETENTE ?? 'site@afirmaevias.com.br';
-
-// destino por tipo, com o comercial como padrao
-const DESTINOS: Record<string, string> = {
-  contato: process.env.EMAIL_CONTATO ?? 'comercial@afirmaevias.com.br',
-  candidatura: process.env.EMAIL_RH ?? 'comercial@afirmaevias.com.br',
-  relato: process.env.EMAIL_COMPLIANCE ?? 'comercial@afirmaevias.com.br',
-  lgpd: process.env.EMAIL_ENCARREGADO ?? 'privacidade@afirmaevias.com.br'
+type Tipo = 'contato' | 'candidatura' | 'relato' | 'lgpd';
+const modelos: Record<Tipo, { assunto: string; caminho: string; destino: string }> = {
+  contato: { assunto: 'Novo contato recebido pelo site', caminho: '/admin/dados/contatos', destino: 'EMAIL_CONTATO' },
+  candidatura: { assunto: 'Novo currículo recebido pelo site', caminho: '/admin/dados/candidaturas', destino: 'EMAIL_RH' },
+  relato: { assunto: 'Novo relato de integridade recebido', caminho: '/admin/dados/relatos', destino: 'EMAIL_COMPLIANCE' },
+  lgpd: { assunto: 'Novo pedido LGPD recebido', caminho: '/admin/dados/lgpd', destino: 'EMAIL_ENCARREGADO' }
 };
+const destinosPadrao: Record<Tipo, string> = {
+  contato: 'comercial@afirmaevias.com.br', candidatura: 'comercial@afirmaevias.com.br',
+  relato: 'comercial@afirmaevias.com.br', lgpd: 'privacidade@afirmaevias.com.br'
+};
+type Linha = { id: string; tipo: Tipo; tentativas: number; reserva: string };
+type Banco = { query: (sql: string, params?: any[]) => Promise<{ rows: any[] }> };
+let rodando = false;
 
-let avisouFaltaChave = false;
-
-function escapar(texto: string) {
-  return texto.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+// Uma reserva por vez, com SKIP LOCKED e expiração, permite vários processos e recuperação após queda.
+export async function processarFilaAvisos(banco: Banco = pool, enviar: typeof fetch = fetch) {
+  const chave = process.env.RESEND_API_KEY;
+  if (!chave || rodando) return;
+  rodando = true;
+  try {
+    for (let i = 0; i < 20; i++) {
+      const { rows } = await banco.query(`UPDATE avisos_email_fila SET reserva = gen_random_uuid(),
+        proxima_tentativa = now() + interval '2 minutes' WHERE id = (
+          SELECT id FROM avisos_email_fila WHERE proxima_tentativa <= now()
+          ORDER BY criado_em LIMIT 1 FOR UPDATE SKIP LOCKED
+        ) RETURNING id, tipo, tentativas, reserva`);
+      const aviso = rows[0] as Linha | undefined;
+      if (!aviso) break;
+      const modelo = modelos[aviso.tipo];
+      try {
+        const resposta = await enviar('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${chave}`, 'Content-Type': 'application/json', 'Idempotency-Key': `site-aviso/${aviso.id}` },
+          body: JSON.stringify({
+            from: `Site Afirma E-vias <${process.env.EMAIL_REMETENTE ?? 'site@afirmaevias.com.br'}>`,
+            to: [process.env[modelo.destino] ?? destinosPadrao[aviso.tipo]],
+            subject: producao ? modelo.assunto : `[teste] ${modelo.assunto}`,
+            html: `<p>Há um novo registro. Consulte o painel com acesso controlado.</p><p><a href="${config.siteUrl.replace(/\/$/, '')}${modelo.caminho}">Abrir no painel</a></p>`
+          }),
+          signal: AbortSignal.timeout(8000)
+        });
+        if (!resposta.ok) throw new Error(`http_${resposta.status}`);
+        await banco.query('DELETE FROM avisos_email_fila WHERE id = $1 AND reserva = $2', [aviso.id, aviso.reserva]);
+      } catch {
+        const tentativas = aviso.tentativas + 1;
+        const espera = Math.min(3600, 30 * 2 ** Math.min(tentativas - 1, 7));
+        await banco.query(`UPDATE avisos_email_fila SET tentativas = $3, reserva = NULL,
+          proxima_tentativa = now() + $4 * interval '1 second' WHERE id = $1 AND reserva = $2`,
+          [aviso.id, aviso.reserva, tentativas, espera]);
+        console.error(JSON.stringify({ codigo: 'aviso_email_falhou', fila: aviso.id, tentativas }));
+      }
+    }
+  } catch (erro) {
+    console.error(JSON.stringify({ codigo: 'aviso_email_fila_erro', erro: erro instanceof Error ? erro.name : 'desconhecido' }));
+  } finally { rodando = false; }
 }
 
-type Aviso = {
-  tipo: keyof typeof DESTINOS | string;
-  assunto: string;
-  linhas: [string, string][];
-  caminhoAdmin: string;
-};
-
-// Nunca lanca: o formulario ja gravou no banco e a falha de e-mail nao pode
-// derrubar a resposta para quem enviou.
-export async function avisarEquipe(aviso: Aviso) {
-  if (!CHAVE) {
-    if (!avisouFaltaChave) {
-      avisouFaltaChave = true;
-      console.warn('RESEND_API_KEY ausente: avisos por e-mail desligados, os registros seguem so no /admin');
-    }
+export function iniciarFilaAvisos() {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn('RESEND_API_KEY ausente: avisos serão mantidos na fila até configurar o envio');
     return;
   }
-
-  const destino = DESTINOS[aviso.tipo] ?? DESTINOS.contato;
-  const url = `${config.siteUrl.replace(/\/$/, '')}${aviso.caminhoAdmin}`;
-  const corpo = aviso.linhas
-    .map(([rotulo, valor]) => `<p><strong>${escapar(rotulo)}:</strong><br>${escapar(valor || '—').replace(/\n/g, '<br>')}</p>`)
-    .join('');
-
-  try {
-    const resposta = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${CHAVE}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from: `Site Afirma E-vias <${REMETENTE}>`,
-        to: [destino],
-        subject: producao ? aviso.assunto : `[teste] ${aviso.assunto}`,
-        html: `${corpo}<p><a href="${url}">Abrir no painel</a></p>`
-      }),
-      signal: AbortSignal.timeout(8000)
-    });
-    if (!resposta.ok) {
-      console.error('falha ao enviar aviso:', resposta.status, await resposta.text().catch(() => ''));
-    }
-  } catch (falha) {
-    console.error('falha ao enviar aviso:', falha instanceof Error ? falha.message : falha);
-  }
+  const intervalo = Math.max(1000, Number(process.env.AVISOS_FILA_INTERVALO_MS) || 60_000);
+  setInterval(() => void processarFilaAvisos(), intervalo).unref();
+  void processarFilaAvisos();
 }

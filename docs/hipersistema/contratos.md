@@ -112,6 +112,8 @@ Para workers, endpoints públicos e chamadas sem usuário: mTLS + `{app_code, ca
 
 O app envia o mesmo `subject_token`, `app_code` e `request_id` por mTLS. RH verifica que o chamador corresponde ao app, pede autorização ao AUTH e resolve seu diretório **no próprio banco**. AUTH permite ao serviço `rh-api` introspectar token de outro app somente para a operação de contexto; RH deve vincular audience ao chamador mTLS original. Não encaminhar token do Controle para APIs normais de folha RH.
 
+**Endpoint fixado pela implementação do AUTH (22/10/2026):** a delegação acima é o `POST /v1/authorize-context` do AUTH (`contracts/v1/auth.openapi.json`, `DelegatedAuthorizeRequest`). Somente por mTLS, com a capacidade técnica `rh.context` do `rh-api`; o corpo traz `subject_token`, `app_code`, `request_id` e `delegation` com `purpose=rh.context` e `original_service_id` (o certificado do consumidor original, verificado pelo RH). O AUTH confere se esse serviço está ativo e possui `authorize` para o app e responde com o mesmo `AuthorizeResponse` de `/v1/authorize`. O privilégio não libera folha nem endpoints humanos de outros apps.
+
 Resposta mínima:
 
 ```json
@@ -140,6 +142,12 @@ Verifica mTLS, AUTH serviço e configuração local do consumidor; devolve `{ena
 ### Consulta e diretório
 
 `GET /api/integracao/v1/persons/:person_id` e `GET /api/integracao/v1/organization-units`: somente projeções permitidas ao chamador, com paginação e minimização. Consultas de pessoas em lote: máximo 100 IDs, sem enumeração irrestrita por qualquer app. Cada operação de serviço também passa pelo AUTH. Pessoas bloqueadas podem aparecer em consultas históricas autorizadas; não podem voltar a operar.
+
+### AUTH `POST /v1/service-authorize-context` — extensão aditiva de 26/10/2026
+
+Incorporada da implementação do AUTH. Permite exclusivamente a `rh-api`, com capacidade `rh.service-context` para o app solicitado, validar o serviço original de uma chamada técnica recebida por mTLS. `DelegatedServiceAuthorizeRequest` contém `app_code`, `capability`, `request_id` e `delegation` com `purpose=rh.service-context`, `original_service_id` e `original_certificate_sha256` (SHA-256 do DER verificado no listener RH). O AUTH confere serviço ativo, expiração, fingerprint cadastrado e capacidade vigente do original a cada chamada. A resposta é `ServiceAuthorizeResponse`, identificando o original, nunca uma pessoa. Não substitui autorização humana nem permite grants.
+
+A delegação humana `DelegatedAuthorizeRequest.delegation` também aceita `original_certificate_sha256` como campo aditivo. O RH sempre o envia; AUTH confere o fingerprint e a validade operacional cadastrada além do serviço/app. Consumidores antigos do contrato mantêm compatibilidade, sem alterar o significado de `sub`.
 
 ## C04. Dependência real, saúde e falhas
 
@@ -268,6 +276,8 @@ Provisionamento é uma saga explícita:
 
 Nenhum login auto-provisiona perfil administrativo. App não escreve grant de outro app. Concessões são serializadas/transacionais no AUTH; abandonar ler-alterar-gravar `app_metadata.apps` sem controle de concorrência. Administração usa API restrita; `service_role` GoTrue e chave HS256 nunca saem do AUTH na arquitetura final.
 
+**Rotas fixadas pela implementação do AUTH (22/10/2026), todas apenas por mTLS e com `Idempotency-Key`:** `PUT /v1/grants` (capacidade `grants.write`; `GrantRequest` com status `active` ou `revoked`, vigência e `request_id`) e `POST /v1/bootstrap/rh` (capacidade `rh.bootstrap`, uso único por `installation_id` e `operation_id`; resposta `pending` ou `consumed`). Nenhuma das duas é pública, e a segunda não substitui a recusa de repetição descrita abaixo.
+
 ### Inicialização sem dependência circular
 
 AUTH inicializa seu operador e registro de serviços independentemente do RH, pelo procedimento A05. Para um RH vazio, entregar CLI de inicialização de administrador que usa identidade AUTH verificada e capacidade técnica temporária `rh.bootstrap`, limitada à instalação e consumida uma única vez. A CLI cria pessoa mínima, vínculo de identidade e perfil RH administrativo na mesma transação local; registra o grant do app RH pela API administrativa AUTH e mantém estado pendente até a confirmação. Não cria emprego/salário fictício, não usa uma senha local e não oferece endpoint público de autoatribuição de admin.
@@ -304,3 +314,98 @@ As escolhas do projeto acima são decisões deste planejamento. As referências 
 - [RFC 8252 — aplicativos nativos](https://www.rfc-editor.org/rfc/rfc8252.html): autenticação via navegador externo e PKCE para mobile.
 - [Supabase OAuth Server](https://supabase.com/docs/guides/auth/oauth-server/getting-started): documentação consultada apresenta o recurso como beta; não é evidência de suporte na imagem antiga do repositório.
 - [PostgreSQL — privilégios](https://www.postgresql.org/docs/16/ddl-priv.html): base para roles e revogação de permissões padrão. [Docker Compose — startup](https://docs.docker.com/compose/how-tos/startup-order/): ordem/health inicial não substituem autorização contínua.
+
+## C11. Comercial → Laboratório
+
+**Estado em 27/10/2026.** O Comercial existe (`aevias_comercial`) e está em **produção**, com login e banco próprios. Ele já grava o pedido sem preço em `integracao_outbox` na mesma transação da aprovação da proposta; o envio está **desligado** (sem `LAB_API_URL`) e nunca foi testado contra o Laboratório real. Esse repositório **não pode ser alterado** por esta iniciativa. Por isso o formato abaixo é **o que o Comercial já envia**, e o Laboratório se adapta a ele. As regras gerais de conexão direta estão no C12; este capítulo é a conexão 2 da matriz.
+
+### Fronteira e donos
+
+| Dado | Dono | Regra |
+|---|---|---|
+| Catálogo de ensaios (`ensaio_catalogo`: nome, norma, categoria) | Laboratório | O Comercial mantém um espelho (`data/lab-ensaios.json`) e liga cada serviço a um `catalog_id`; a proposta guarda cópia do nome/norma na data |
+| Preço, desconto, custo, margem, condições, escopo contratado, medição e faturamento | Comercial | O Laboratório nunca recebe valor monetário |
+| Conta comercial, contatos e portal do cliente | Comercial | Dados pessoais mínimos; sem CPF |
+| Cliente impresso no certificado (razão social, CNPJ, responsável, cidade) | Laboratório (`cliente`) | Vínculo pelo CNPJ. Os dados do Laboratório prevalecem no certificado; diferença de razão social vira aviso, não sobrescrita |
+| FAS, número, status, recebimento, ensaio, certificado | Laboratório | Número `FAS-AAAA-NNNN` alocado pelo servidor do Laboratório |
+| Andamento do serviço no Comercial (`contrato_linhas.estado_lab`, `certificado_numero`) | Comercial (projeção) | Derivado do feed do Laboratório; não se edita à mão para "corrigir" o Laboratório |
+
+### Direção, transporte e independência
+
+O Comercial chama o Laboratório; o Laboratório nunca chama o Comercial. Com o Comercial parado, o Laboratório opera e cria FAS manualmente. Com o Laboratório parado, o Comercial continua montando e aprovando propostas; o repasse fica na outbox.
+
+O Comercial em produção envia `Authorization: Bearer <LAB_API_TOKEN>` e `Idempotency-Key: <proposal_id>:<proposal_version>`, com timeout de 10 s. Esse token **nunca autoriza sozinho**. A conexão só é ligada com: TLS público; mTLS da identidade técnica `comercial-api` apresentado por um proxy de saída da infraestrutura (sem alterar o repositório do Comercial); e `POST /v1/service-authorize` no AUTH com `app_code=laboratorio` e a capacidade da operação. O Laboratório pode exigir o token como fator adicional, exclusivo desta rota e rotacionável. Até haver identidade `comercial-api` no AUTH e o proxy, a conexão permanece desligada e a FAS continua informada à mão no Comercial.
+
+Capacidades em `app_code=laboratorio`: `laboratorio.catalog.read`, `laboratorio.service-request.create`, `laboratorio.service-request.change`, `laboratorio.progress.read`.
+
+### Repasse da proposta aprovada
+
+`POST /api/integracao/v1/comercial/service-requests`, corpo exatamente como o Comercial produz hoje:
+
+```json
+{
+  "proposal_id": "<UUID>",
+  "proposal_code": "PC 294.26",
+  "proposal_version": 1,
+  "customer": {"cnpj": "00.000.000/0001-00", "razao_social": "<texto>"},
+  "requester": "<nome do responsável no Comercial>",
+  "lines": [
+    {"line_id": "<UUID>", "catalog_id": "<ID do catálogo ou null>", "descricao": "<texto>", "norma": "<texto ou null>", "unidade": "Ensaio", "quantidade": 5, "prazo_dias": 15}
+  ]
+}
+```
+
+Regras do Laboratório ao receber:
+
+1. **Persistir antes de responder** (inbox idempotente por `Idempotency-Key`), dentro do timeout de 10 s. Mesma chave e mesmo corpo devolvem a resposta original.
+2. **O Comercial em produção trata 409 como entregue e qualquer outro 4xx/5xx como erro com nova tentativa** (recuo exponencial até 12 h). Por isso: 409 só para chave repetida com corpo diferente, com alerta registrado no Laboratório; nenhuma situação de negócio responde 409.
+3. CNPJ único no cadastro do Laboratório: abre a FAS `aberta` e responde **201** com `fas_id`, `fas_number` (`FAS-AAAA-NNNN`), `status`, `lines` e `warnings`. O Comercial lê `fas_number` e `fas_id`.
+4. CNPJ ausente no Laboratório: cria o cliente com CNPJ e razão social recebidos; os demais campos são completados na análise crítica.
+5. CNPJ duplicado no Laboratório, CNPJ inválido, `catalog_id` nulo ou inativo, norma divergente da vigente: responder **202** com `status: "pending_review"` e `warnings`, mantendo o pedido em análise crítica humana. O número da FAS volta depois pelo feed ou é informado à mão no Comercial. Nunca rejeitar com 4xx o que precisa de decisão humana.
+6. Campo monetário presente (preço, valor, desconto, custo, margem): 422 e alerta. É defeito, não negócio.
+7. `requester` é dado pessoal informativo: guardado como "solicitante" do pedido, nunca como autor humano no Laboratório. Quando o Comercial integrar o AUTH, entra `requested_by_auth_user_id` como campo aditivo.
+8. `descricao` e `norma` servem à análise crítica; o Laboratório usa o próprio catálogo e não corrige o pedido em silêncio. Itens terceirizados não são enviados pelo Comercial.
+
+### Mudança, andamento e contagem (dependem de liberação do Comercial)
+
+- `POST /api/integracao/v1/comercial/service-requests/{fas_id}/change-requests` com `{type: cancel | amend_scope, reason_code, lines?}`: responde 202 e o Laboratório decide. O Comercial ainda não implementa; hoje o aditivo é interno.
+- Feed C06 com consumidor `comercial-api`, stream `service_progress`: `laboratorio.fas.status_changed.v1`, `laboratorio.sample.received.v1`, `laboratorio.test.state_changed.v1`, `laboratorio.certificate.issued.v1`, `laboratorio.certificate.revised.v1`, `laboratorio.change_request.decided.v1`. Allowlist: IDs, `line_id` quando conhecido, estado, datas, número e revisão do certificado. Sem resultado técnico, anexo, foto, colaborador ou texto livre. O Comercial já tem as colunas de destino; a coleta ainda não existe nele.
+- Estados da linha: `pending_lab`, `pending_review`, `fas_aberta`, `material_recebido`, `em_ensaio`, `certificado_emitido`, `concluida`, `declined`, `cancelled`. Contagem por certificado emitido ligado a `fas_id` e `catalog_id`; revisão não conta de novo. Ensaio fora do escopo ou quantidade excedente é sinalizado, não bloqueado. A análise crítica do pedido continua do Laboratório, que pode recusar com motivo (FAS cancelada). Aderência a normas, inclusive ISO/IEC 17025, não foi revalidada por este contrato.
+
+### Preservação, reconciliação e aceite
+
+Nada altera shape, hash ou numeração de certificados. Vínculo em tabela lateral `integracao_comercial_vinculo` (`fas_id`, `proposal_id`, `proposal_version`, `line_id`, `state`) criada por nova migration. Reconciliação por proposta e período gera "FAS sem proposta" (FAS manual, permitida) e "proposta sem FAS". Aceite com um simulador que reproduz exatamente o envio do Comercial em produção (cabeçalhos, timeout, tratamento de 409 e de erro): idempotência, CNPJ duplicado em 202 sem perda, `catalog_id` nulo em 202, ausência de preço, Laboratório parado e retomada, 403 sem capacidade ou com credencial de outro serviço, e contract tests (C09).
+
+## C12. Conexões diretas entre sistemas de negócio
+
+**Escopo de 27/10/2026.** AUTH e RH no núcleo. Sistemas de negócio: Ponto, Controle, Laboratório, Institucional, Comercial, S&L, NPS e Projetos, cada um com banco próprio. EPI foi incorporado ao S&L; ADM deixou de existir. S&L, NPS e Projetos ainda não têm repositório. O Comercial está em produção e seu repositório não é alterado por esta iniciativa.
+
+### Regras comuns
+
+1. **Seta = a origem chama a API do destino.** O destino nunca chama a origem, não depende dela para iniciar nem para operar, e a origem continua funcionando com o destino parado (outbox e estado "pendente").
+2. **Transporte:** mTLS entre serviços e AUTH `POST /v1/service-authorize` com `app_code` do **destino** e capacidade `<destino>.<recurso>.<ação>` concedida só à identidade técnica da origem. Token compartilhado nunca é a única credencial. Nada de SQL, `dblink`, leitura de arquivos do outro sistema ou webhook de volta.
+3. **Comandos:** outbox na mesma transação da origem, `Idempotency-Key` estável por objeto e versão, recuo de C06, sem retry cego. O destino persiste o pedido antes de responder. O que exige decisão humana responde 202 `pending_review`; 4xx fica para requisição malformada, credencial ou permissão.
+4. **Andamento:** a origem coleta um feed do destino no formato C06, com consumidor, stream, allowlist e cursor próprios (410 seguido de snapshot). Um feed atende vários consumidores com allowlists separadas; o coletor do RH não herda acesso a esses streams.
+5. **Dados mínimos:** cada conexão lista o que atravessa. Preço, custo e margem nunca saem do Comercial. Resultado técnico só sai do Laboratório ou do Controle quando a conexão o prevê. Dados pessoais apenas os necessários, sem CPF.
+6. **Pessoa × serviço:** quem pediu é informação do pedido (`requested_by_auth_user_id`, ou nome enquanto a origem não estiver no AUTH), nunca autor humano no destino.
+7. **Ativação:** uma conexão só é ligada quando as duas pontas existem, o transporte do item 2 está pronto e os contract tests (C09) passaram. Sistema sem repositório recebe só o contrato. Conexão desligada não pode quebrar nenhuma das pontas.
+
+### Matriz de conexões
+
+| # | Origem → destino | Para quê (proposta de planejamento) | Capacidades no destino | O que atravessa | Estado em 27/10/2026 |
+|---:|---|---|---|---|---|
+| 1 | Institucional → Comercial | Botão "Área do cliente" para o portal do Comercial; formulário de orçamento do site vira solicitação no Comercial | `comercial.lead.create`, `comercial.lead.read` | Empresa, CNPJ, contato (nome, e-mail, telefone), serviço de interesse, mensagem, versão do aviso de privacidade aceito; volta só o estado da solicitação | Link: alteração local no site, sem publicação. API: exige mudança no Comercial, congelado |
+| 2 | Comercial → Laboratório | Proposta aprovada vira FAS; andamento volta (C11) | `laboratorio.catalog.read`, `laboratorio.service-request.create`, `laboratorio.service-request.change`, `laboratorio.progress.read` | C11 | Comercial pronto e desligado; Laboratório L08 |
+| 3 | Comercial → Controle | Serviço de campo contratado vira ordem de serviço na obra; a execução volta para a medição do Comercial | `controle.service-order.create`, `controle.service-order.change`, `controle.progress.read` | Proposta e revisão, cliente (CNPJ), obra/local, itens sem preço, prazos; volta estado, quantidades executadas e datas, sem documento técnico, foto ou assinatura | Controle CT09; Comercial depende de liberação |
+| 4 | Comercial → NPS | Pesquisa de satisfação ao concluir um serviço | `nps.survey.request`, `nps.result.read` | Serviço/contrato, cliente, contato que responde, data de conclusão; volta nota, categoria e comentário quando autorizado | NPS sem repositório |
+| 5 | Comercial → Projetos | Projeto contratado (dosagem e engenharia) abre projeto | `projetos.project.create`, `projetos.project.change`, `projetos.progress.read` | Proposta e revisão, cliente, modelo de escopo do projeto sem preço, prazos; volta estado, entregas e revisões | Projetos sem repositório |
+| 6 | Projetos → Laboratório | Ensaios do projeto pedidos como FAS; resultado técnico volta ao projeto | `laboratorio.service-request.create` (origem `projetos`), `laboratorio.results.read` | Pedido no formato C11 com `project_id`, sem preço; volta certificado e resultado técnico **somente das FAS do próprio projeto** | Projetos sem repositório; Laboratório L09 |
+| 7 | Projetos → Controle | Especificação aprovada do projeto (faixa granulométrica, teores, parâmetros) publicada para a obra; conformidade de campo volta | `controle.project-spec.publish`, `controle.conformance.read` | Projeto e versão, obra, parâmetros de projeto; volta conformidade por lote/ensaio, sem foto ou assinatura | Projetos sem repositório; Controle CT10 |
+| 8 | Laboratório → S&L | Requisição de insumos, EPI, equipamentos e logística do laboratório | `sl.request.create`, `sl.request.read` | Item, quantidade, local, prazo, solicitante; EPI entregue a uma pessoa referencia `person_id` | S&L sem repositório; Laboratório L10 |
+| 9 | Controle → S&L | Requisição de campo: insumos, EPI, equipamentos, transporte | `sl.request.create`, `sl.request.read` | Idem, com obra e regional | S&L sem repositório; Controle CT11 |
+
+A coluna "para quê" é a leitura do planejamento a partir dos domínios existentes; o dono confirma cada linha antes de implementá-la. A sigla S&L é tratada como Suprimentos e Logística, que absorve o EPI; confirmar. Quando Projetos existir, decidir se `projeto_bgs` e `projeto_mraf`, hoje no Laboratório, migram para Projetos ou permanecem como dado técnico do Laboratório; até lá, nada muda. A medição continua do Comercial e só cobre o executado informado pelo destino.
+
+### Registro no AUTH
+
+Mudança aditiva do v1. Agora: app `comercial`, cliente `comercial-web` (registrado, sem grants humanos e sem ativar o login central do Comercial), identidade `comercial-api`, delegação `rh-api` para `comercial` e as capacidades das conexões cujas duas pontas existem (1, 2 e 3). Os nomes `sl`, `nps` e `projetos` ficam reservados no contrato e só são registrados quando os sistemas existirem. EPI e ADM não recebem código. Cada capacidade é concedida a uma única identidade de origem.
