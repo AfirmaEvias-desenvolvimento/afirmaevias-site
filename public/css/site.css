@@ -67,14 +67,14 @@
   /* Tokens de tema. As seções escuras (herói, app, chamada, rodapé) são
      azuis nos dois temas; o que troca é tudo que fica sobre fundo claro. */
   color-scheme: light;
-  --fundo: var(--off-white);
-  --fundo-alt: var(--bege);
+  --fundo: #f0f2f5;
+  --fundo-alt: #e7ebee;
   --fundo-branco: var(--branco);
   --superficie: var(--branco);
   --superficie-alt: var(--off-white);
   --superficie-bege: var(--bege);
   --campo-foco: var(--branco);
-  --texto: var(--azul);
+  --texto: #0d2137;
   --texto-forte: var(--azul-80);
   /* texto corrido sobre claro: azul a 72% fica em ~6:1, folgado acima do AA */
   --texto-suave: rgba(0, 35, 59, 0.72);
@@ -101,14 +101,14 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema='claro']) {
     color-scheme: dark;
-    --fundo: #001829;
-    --fundo-alt: #001f35;
+    --fundo: #0b1a28;
+    --fundo-alt: #16324b;
     --fundo-branco: #001c30;
-    --superficie: #072e4a;
+    --superficie: #12263a;
     --superficie-alt: rgba(242, 241, 239, 0.06);
     --superficie-bege: rgba(191, 207, 153, 0.14);
     --campo-foco: rgba(242, 241, 239, 0.1);
-    --texto: var(--off-white);
+    --texto: #e8edf2;
     --texto-forte: rgba(242, 241, 239, 0.88);
     --texto-suave: rgba(242, 241, 239, 0.74);
     --texto-fraco: rgba(242, 241, 239, 0.56);
@@ -131,14 +131,14 @@
 /* mesma lista do bloco acima, para quem escolheu o escuro no botão */
 :root[data-tema='escuro'] {
   color-scheme: dark;
-  --fundo: #001829;
-  --fundo-alt: #001f35;
+  --fundo: #0b1a28;
+  --fundo-alt: #16324b;
   --fundo-branco: #001c30;
-  --superficie: #072e4a;
+  --superficie: #12263a;
   --superficie-alt: rgba(242, 241, 239, 0.06);
   --superficie-bege: rgba(191, 207, 153, 0.14);
   --campo-foco: rgba(242, 241, 239, 0.1);
-  --texto: var(--off-white);
+  --texto: #e8edf2;
   --texto-forte: rgba(242, 241, 239, 0.88);
   --texto-suave: rgba(242, 241, 239, 0.74);
   --texto-fraco: rgba(242, 241, 239, 0.56);
