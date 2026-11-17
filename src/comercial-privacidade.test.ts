@@ -1,6 +1,6 @@
 // Texto de privacidade da conexão 1 (TEXTO PROPOSTO, revisar com o jurídico) e garantias de que a eliminação LGPD não
 // deixa dado pessoal na tabela de pendências. Não precisa de Postgres: confere o conteúdo, a versão e o schema.
-import test from 'node:test';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';

@@ -13,8 +13,9 @@
     "migrate": "node dist/migrate.js",
     "migrate:dev": "tsx src/migrate.ts",
     "postbuild": "node -e \"require('fs').cpSync('src/views','dist/views',{recursive:true})\"",
-    "test": "tsc -p tsconfig.json && node --test \"dist/**/*.test.js\"",
-    "e2e:conexao-1": "node scripts/e2e-conexao-1.mjs"
+    "test": "vitest run && npm run test:db",
+    "e2e:conexao-1": "node scripts/e2e-conexao-1.mjs",
+    "test:db": "tsc -p tsconfig.json && node --test dist/eliminacao-comercial.test.js dist/integracao-feed.test.js"
   },
   "dependencies": {
     "@fastify/compress": "^9.2.0",
@@ -37,6 +38,7 @@
     "@types/node": "^22.10.5",
     "@types/pg": "^8.11.10",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^3.2.7"
   }
 }

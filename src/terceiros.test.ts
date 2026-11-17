@@ -4,7 +4,7 @@
 //
 // A única exceção declarada é a página extra /bruno_magalhaes (YouTube).
 // Está numa lista explícita: se ela sair, o teste passa a exigir zero.
-import test from 'node:test';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';

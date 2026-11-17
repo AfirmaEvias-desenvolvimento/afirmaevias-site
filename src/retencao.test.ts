@@ -5,7 +5,7 @@
 // inteira, em silêncio, no próximo deploy.
 //
 // Estes testes varrem as regras e cobram essa forma.
-import test from 'node:test';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import { REGRAS } from './regras-retencao.js';
 import { privacidade, cookies } from './content.js';

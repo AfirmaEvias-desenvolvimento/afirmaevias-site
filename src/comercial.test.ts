@@ -1,7 +1,7 @@
 // Conexão 1 (Institucional → Comercial): corpo do contrato, classificação das respostas, recuo, configuração
 // desligada por padrão e o transporte mTLS de verdade (certificados gerados com openssl, servidor HTTPS local que
 // exige certificado de cliente). Não precisa de Postgres nem do Comercial.
-import test from 'node:test';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import https from 'node:https';
 import fs from 'node:fs';
@@ -160,7 +160,7 @@ function criarPki(dir: string) {
   emitir('estranho', 'cli.ext', 'ca2');
 }
 
-test('transporte mTLS: entrega com certificado de cliente, manda Idempotency-Key e corpo, e a recusa sem certificado é rede (null)', { skip: !temOpenssl && 'openssl indisponível' }, async () => {
+test.skipIf(!temOpenssl)('transporte mTLS: entrega com certificado de cliente, manda Idempotency-Key e corpo, e a recusa sem certificado é rede (null)', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'site-mtls-'));
   const vistos: { metodo?: string; url?: string; chave?: string; corpo?: string; san?: string }[] = [];
   let servidor: https.Server | undefined;

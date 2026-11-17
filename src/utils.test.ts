@@ -1,7 +1,7 @@
 // Testes das funções puras que sustentam formulário, exportação e download.
 // Rodam com o test runner do próprio Node: nenhuma dependência nova.
 //   npm test
-import test from 'node:test';
+import { test } from 'vitest';
 import assert from 'node:assert/strict';
 import {
   limpar,
