@@ -37,7 +37,7 @@
       <p>Nada aqui ainda.<% if (busca || status) { %> Tente outro filtro.<% } else { %> Assim que alguém enviar pelo site, aparece nesta lista.<% } %></p>
     </div>
   <% } else { %>
-    <div class="tabela-envolvida-admin">
+    <div class="tabela-envolvida-admin" role="region" aria-label="Tabela de <%= colecao.rotulo %>" tabindex="0">
       <table class="tabela-admin tabela-admin--lista">
         <thead>
           <tr>

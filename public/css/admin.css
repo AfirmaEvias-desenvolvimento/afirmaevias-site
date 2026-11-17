@@ -237,7 +237,7 @@ img { display: block; max-width: 100%; }
 
 /* --------------------------------------------------------------- tabelas */
 
-.tabela-envolvida-admin { overflow-x: auto; background: var(--branco); border: 1px solid var(--azul-12); }
+.tabela-envolvida-admin { position: relative; overflow-x: auto; max-width: 100%; background: var(--branco); border: 1px solid var(--azul-12); }
 .tabela-admin { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
 .tabela-admin--lista { min-width: 640px; }
 .tabela-admin th {
