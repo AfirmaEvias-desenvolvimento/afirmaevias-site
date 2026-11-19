@@ -4,7 +4,7 @@ Fase 0 (preparação do código para a Railway), feita em 19/11/2026. Nenhum dep
 original do guia do Chrome e entra agora com os serviços `site` e `site-migrate` e o Postgres `pg-site`.
 
 - **Repositório:** `AfirmaEvias-desenvolvimento/afirmaevias-site`, branch `main`.
-- **Commit da Fase 0:** ver a linha "Commit do código" ao fim deste arquivo (registrado no commit seguinte, como nos outros).
+- **Commit da Fase 0:** `2058ae78cf149835cac026cf83d7df602744658a` (o código; este arquivo foi atualizado no commit seguinte só para registrar o hash).
 - **Imagem:** não construída localmente (Docker não roda nesta máquina, falta o WSL). Build (`npm ci` + `npm run build`),
   dependências de produção, layout da imagem, migração com `--runtime` e subida com `site_app` + `PUBLIC_HTTP=1` +
   `HOST=::` foram conferidos fora do Docker, numa cópia temporária, com Postgres embutido.
@@ -252,4 +252,4 @@ node dist/admin-inicial.js --email <e-mail da pessoa> --nome "<nome>" --designac
 
 ## Commit do código
 
-- Fase 0: (registrado no commit seguinte)
+- Fase 0: `2058ae7`
