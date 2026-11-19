@@ -24,6 +24,7 @@ import { confiancaProxy, hostEscuta, rotasSaude } from './railway.js';
 import { rotasSite } from './routes/site.js';
 import { rotasFormularios } from './routes/forms.js';
 import { rotasAdmin } from './routes/admin.js';
+import { naoEncontrado } from './nao-encontrado.js';
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 
@@ -119,17 +120,7 @@ await app.register(rotasSite);
 await app.register(rotasFormularios);
 await app.register(rotasAdmin, { prefix: '/admin' });
 
-app.setNotFoundHandler((request, reply) => {
-  if (request.url.startsWith('/admin')) {
-    return reply.code(404).view('admin/404', { titulo: 'Página não encontrada', usuario: null });
-  }
-  return reply.code(404).view('pages/404', {
-    titulo: 'Página não encontrada',
-    descricao: 'O endereço que você acessou não existe.',
-    rotaAtual: '',
-    naoIndexar: true
-  });
-});
+app.setNotFoundHandler(naoEncontrado);
 
 app.setErrorHandler((erro: any, request, reply) => {
   request.log.error(erro);
