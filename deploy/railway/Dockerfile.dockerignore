@@ -1,0 +1,19 @@
+# Contexto da imagem do site (BuildKit lê este arquivo por estar ao lado do Dockerfile). Nada de segredo, banco local,
+# dependências ou build do Windows.
+.git
+.github
+.claude
+.data
+.env
+.env.*
+node_modules
+**/node_modules
+dist
+*.log
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+docs
+scripts

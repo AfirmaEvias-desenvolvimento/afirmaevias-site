@@ -1,25 +1,20 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { pool, consultarUm, consultar } from './db.js';
 import { config } from './config.js';
 import { gerarHashSenha } from './auth.js';
 import { vagas } from './content.js';
 import { publicarConfiguracao } from './integracao-produtor.js';
-
-const aqui = path.dirname(fileURLToPath(import.meta.url));
+import { aplicarRuntime, lerSql, pedeRuntime } from './migracao.js';
 
 async function rodar() {
-  const caminhos = [
-    path.resolve(aqui, '../db/schema.sql'),
-    path.resolve(aqui, '../../db/schema.sql')
-  ];
-  const caminho = caminhos.find((c) => fs.existsSync(c));
-  if (!caminho) throw new Error('schema.sql nao encontrado');
-
-  const sql = fs.readFileSync(caminho, 'utf8');
-  await pool.query(sql);
+  await pool.query(lerSql('schema.sql'));
   console.log('schema aplicado');
+
+  // Railway (serviço site-migrate): `node dist/migrate.js --runtime` concede ao papel site_app só DML (db/runtime.sql).
+  // Sem a flag (ecossistema local, que roda como o dono e sem papel separado) nada muda.
+  if (pedeRuntime()) {
+    await aplicarRuntime(pool);
+    console.log('privilegios do site_app aplicados');
+  }
 
   // Feed do RH: o trigger precisa da versao do aviso vigente e das areas de vaga publicadas (so elas saem como area_code).
   await publicarConfiguracao(pool, config.versaoPolitica, vagas.areas);

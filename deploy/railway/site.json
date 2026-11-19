@@ -1,0 +1,12 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": { "builder": "DOCKERFILE", "dockerfilePath": "deploy/railway/Dockerfile" },
+  "deploy": {
+    "startCommand": "sh -c 'umask 077 && mkdir -p /tmp/arq && for v in $(env | grep -o \"^[A-Z0-9_]*_CONTEUDO=\" | tr -d =); do printenv \"$v\" > \"/tmp/arq/$v\"; done && exec node dist/server.js'",
+    "healthcheckPath": "/health/live",
+    "healthcheckTimeout": 120,
+    "numReplicas": 1,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 5
+  }
+}

@@ -20,6 +20,7 @@ import { iniciarIntegracao } from './integracao-servidor.js';
 import { asset } from './assets.js';
 import { dadosEstruturados } from './seo.js';
 import { linhasDeTitulo } from './utils.js';
+import { confiancaProxy, hostEscuta, rotasSaude } from './railway.js';
 import { rotasSite } from './routes/site.js';
 import { rotasFormularios } from './routes/forms.js';
 import { rotasAdmin } from './routes/admin.js';
@@ -28,7 +29,8 @@ const aqui = path.dirname(fileURLToPath(import.meta.url));
 
 const app = Fastify({
   logger: producao ? true : { transport: undefined },
-  trustProxy: true,
+  // local: true (borda TLS em 127.0.0.1); PUBLIC_HTTP=1 (Railway): exatamente 1 salto (src/railway.ts)
+  trustProxy: confiancaProxy(),
   bodyLimit: config.uploadMaximoBytes + 1024 * 512
 });
 
@@ -110,11 +112,8 @@ app.addHook('onSend', async (req, reply, payload) => {
   return payload;
 });
 
-app.get('/health', async (_req, reply) => {
-  await pool.query('SELECT 1');
-  reply.header('Cache-Control', 'no-store');
-  return { ok: true };
-});
+// /health/live (processo de pé, healthcheck da Railway) e /health (confere o banco, como sempre)
+rotasSaude(app, () => pool.query('SELECT 1'));
 
 await app.register(rotasSite);
 await app.register(rotasFormularios);
@@ -211,8 +210,9 @@ for (const sinal of ['SIGTERM', 'SIGINT'] as const) {
 }
 
 try {
-  await app.listen({ port: config.porta, host: process.env.HOST ?? '0.0.0.0' });
-  console.log(`site no ar em http://${process.env.HOST ?? '0.0.0.0'}:${config.porta}`);
+  const host = hostEscuta();
+  await app.listen({ port: config.porta, host });
+  console.log(`site no ar em http://${host.includes(':') ? `[${host}]` : host}:${config.porta}`);
 } catch (erro) {
   app.log.error(erro);
   process.exit(1);

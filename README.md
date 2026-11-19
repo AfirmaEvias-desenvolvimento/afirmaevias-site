@@ -60,6 +60,11 @@ carregadas no processo. Veja [operação e ambiente](docs/arquitetura/06-operaca
 
 ## Deploy no Railway
 
+**Projeto `aevias-hipersistema` (Fase 0, 19/11/2026):** veja [`RAILWAY-PRONTO.md`](RAILWAY-PRONTO.md). Lá a imagem é
+`deploy/railway/Dockerfile`, com os serviços `site` e `site-migrate` (`node dist/migrate.js --runtime`), o papel
+restrito `site_app`, `PUBLIC_HTTP=1`/`HOST=::` e o primeiro admin sem senha em variável (`dist/admin-inicial.js`).
+O roteiro abaixo é o do projeto Railway antigo (Nixpacks, `railway.json` da raiz), que não mudou.
+
 1. Suba o repositório e crie o serviço a partir dele.
 2. Adicione o plugin **PostgreSQL** no mesmo projeto — ele injeta `DATABASE_URL` sozinho.
 3. Configure as variáveis:
