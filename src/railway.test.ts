@@ -98,7 +98,7 @@ test('admin-inicial: argumentos conferidos, senha nunca por argumento', () => {
 const EMBRULHO = (comando: string) =>
   `sh -c 'umask 077 && mkdir -p /tmp/arq && for v in $(env | grep -o "^[A-Z0-9_]*_CONTEUDO=" | tr -d =); do printenv "$v" > "/tmp/arq/$v"; done && exec ${comando}'`;
 
-test('deploy/railway: comandos com o embrulho do Apêndice B, Dockerfile fora da raiz, railway.json antigo intocado', () => {
+test('deploy/railway: comandos com o embrulho do Apêndice B, Dockerfile fora da raiz, railway.json da raiz com build Dockerfile', () => {
   const ler = (f: string) => JSON.parse(fs.readFileSync(path.join(process.cwd(), f), 'utf8'));
   const site = ler('deploy/railway/site.json');
   const migrar = ler('deploy/railway/site-migrate.json');
@@ -117,9 +117,13 @@ test('deploy/railway: comandos com o embrulho do Apêndice B, Dockerfile fora da
   const dockerfile = fs.readFileSync(path.join(process.cwd(), 'deploy/railway/Dockerfile'), 'utf8');
   for (const trecho of ['USER node', 'COPY db db', 'COPY public public', 'COPY contracts/vendor contracts/vendor', 'CMD ["node", "dist/server.js"]', 'printenv'])
     assert.ok(dockerfile.includes(trecho), `Dockerfile sem: ${trecho}`);
-  assert.equal(fs.existsSync(path.join(process.cwd(), 'Dockerfile')), false, 'sem Dockerfile na raiz (o projeto antigo usa Nixpacks)');
+  assert.equal(fs.existsSync(path.join(process.cwd(), 'Dockerfile')), false, 'sem Dockerfile na raiz');
+  // A Railway aplica o build do railway.json da raiz a TODO serviço do repositório (o painel não o sobrepõe): Dockerfile para todos.
+  // O deploy segue o do projeto antigo; nos serviços novos o start command do painel (embrulho) prevalece.
   const antigo = ler('railway.json');
-  assert.equal(antigo.build.builder, 'NIXPACKS');
+  assert.equal(antigo.build.builder, 'DOCKERFILE');
+  assert.equal(antigo.build.dockerfilePath, 'deploy/railway/Dockerfile');
+  assert.equal(antigo.build.buildCommand, undefined, 'o build é o do Dockerfile');
   assert.equal(antigo.deploy.startCommand, 'npm run migrate && npm start');
 });
 

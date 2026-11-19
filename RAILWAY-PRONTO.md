@@ -13,6 +13,11 @@ original do guia do Chrome e entra agora com os serviços `site` e `site-migrate
 - **Projeto Railway antigo do site:** existe um projeto anterior (`noble-surprise`) que fez deploy deste repositório até
   27/10/2026 com Nixpacks e o `railway.json` da raiz. **Esse arquivo não foi alterado** e não há `Dockerfile` na raiz,
   para não mudar o build daquele projeto. A imagem nova fica em `deploy/railway/Dockerfile`. Não mexa no projeto antigo.
+- **Correção de 19/11/2026 (1º deploy no `aevias-hipersistema`):** a Railway aplicou o **build** do `railway.json` da raiz ao serviço novo
+  (saiu Nixpacks e falhou), e o campo Config-as-code do painel não pode mais ser preenchido. Por isso o `build` da raiz passou a ser
+  `DOCKERFILE` + `deploy/railway/Dockerfile`. O `deploy` da raiz ficou igual, e `npm run migrate && npm start` funciona na imagem.
+  Nos serviços novos vale o start command do painel (embrulho), como já acontece com o RH. O projeto antigo não faz deploy
+  deste repositório desde 27/10 (GitHub Deployments); se voltar a fazer, sai pela imagem do Dockerfile.
 
 ## O que o Site é (levantamento)
 
