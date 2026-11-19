@@ -28,10 +28,19 @@ import { naoEncontrado } from './nao-encontrado.js';
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 
+// local: true (borda TLS em 127.0.0.1); PUBLIC_HTTP=1 (Railway): TRUST_PROXY_HOPS saltos, padrão 2 (src/railway.ts).
+// TRUST_PROXY_HOPS fora de 1 a 3 impede a partida, com a mensagem no log.
+let trustProxy: ReturnType<typeof confiancaProxy>;
+try {
+  trustProxy = confiancaProxy();
+} catch (erro) {
+  console.error(`[erro] ${(erro as Error).message}`);
+  process.exit(1);
+}
+
 const app = Fastify({
   logger: producao ? true : { transport: undefined },
-  // local: true (borda TLS em 127.0.0.1); PUBLIC_HTTP=1 (Railway): exatamente 1 salto (src/railway.ts)
-  trustProxy: confiancaProxy(),
+  trustProxy,
   bodyLimit: config.uploadMaximoBytes + 1024 * 512
 });
 

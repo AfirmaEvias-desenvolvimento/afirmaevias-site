@@ -131,7 +131,8 @@ node dist/migrate.js --runtime
 | `NODE_ENV` | `production` (compartilhada) | não |
 | `HOST` | `::` | não |
 | `PORT` | `8080` | não |
-| `PUBLIC_HTTP` | `1` (HTTP atrás da borda; confia em exatamente 1 salto de proxy) | não |
+| `PUBLIC_HTTP` | `1` (HTTP atrás da borda; confia em `TRUST_PROXY_HOPS` saltos de proxy) | não |
+| `TRUST_PROXY_HOPS` | **opcional**, inteiro de 1 a 3; **padrão 2** (não crie a variável). Só vale com `PUBLIC_HTTP=1`; fora disso é ignorada. Valor inválido impede a partida ("TRUST_PROXY_HOPS inválido" no log). Ver "IP do cliente" abaixo | não |
 | `DATABASE_URL` | `postgresql://site_app:${{pg-site.SITE_APP_PASSWORD}}@${{pg-site.PGHOST}}:${{pg-site.PGPORT}}/afirmaevias` | não |
 | `SESSION_SECRET` | segredo novo, 64 hex (sem ela o painel desloga a cada deploy) | não |
 | `SITE_URL` | `https://${{RAILWAY_PUBLIC_DOMAIN}}` (canonical, sitemap, robots e link dos avisos; ver pendência 3) | não |
@@ -158,6 +159,17 @@ Sem `INTEGRACAO_PORT` nada sobe. Para ligar no futuro (decisão do dono), acresc
 | `INTEGRACAO_TLS_CERT` | `/tmp/arq/INTEGRACAO_TLS_CERT_CONTEUDO` (servidor, SAN `DNS:site.railway.internal`) | caminho; `INTEGRACAO_TLS_CERT_CONTEUDO` (Fase 4) |
 | `INTEGRACAO_TLS_KEY` | `/tmp/arq/INTEGRACAO_TLS_KEY_CONTEUDO` | caminho; `INTEGRACAO_TLS_KEY_CONTEUDO` (Fase 4) |
 | `INTEGRACAO_CLIENT_CERT/KEY` | não crie: o padrão já é o `COMERCIAL_MTLS_CERT/KEY` (identidade `institucional-api`) | não |
+
+**IP do cliente atrás da borda (correção de 19/11/2026).** Medido em produção: a borda da Railway descarta o
+`X-Forwarded-For` mandado pelo visitante e repassa `"<IP do cliente>, <IP da própria borda>"` (o último item,
+`46.151.194.x`, varia e é da borda), e o par TCP é interno da Railway. Com 1 salto só (como na Fase 0) o `req.ip` era o
+último item, ou seja, o IP da **borda**: era ele que ia para a trilha de auditoria, o login do `/admin`, os formulários
+(contato, currículo, relato, LGPD, consentimento) e os limites por IP do `@fastify/rate-limit` (todos os visitantes
+caíam no mesmo balde). Agora o site confia em `TRUST_PROXY_HOPS` saltos (padrão 2: o socket e a borda), e o IP do
+cliente é o **penúltimo** item do `X-Forwarded-For`, o mesmo princípio do nginx do Controle (`aevias_controle` `7acde6f6`).
+Com menos itens do que o necessário vale o mais à esquerda; sem o cabeçalho, o par TCP. `CF-Connecting-IP`, `X-Real-IP` e
+`Forwarded` nunca são lidos. `TRUST_PROXY_HOPS=1` volta ao comportamento antigo (só se a borda mudar). Fora do modo
+Railway (sem `PUBLIC_HTTP=1`) nada muda: `trustProxy: true`, como sempre. Código em `src/railway.ts` (`confiancaProxy`).
 
 Não crie no `site`: `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NOME` (senha de pessoa em variável), a credencial do dono
 (`${{pg-site.PGUSER}}`/`PGPASSWORD`), `AEVIAS_SENHA_PADRAO`, `AUTH_MFA`, `COOKIE_INSECURE`. `AUTH_ISSUER_URL`,
@@ -244,8 +256,9 @@ node dist/admin-inicial.js --email <e-mail da pessoa> --nome "<nome>" --designac
 6. **Avisos por e-mail:** `RESEND_API_KEY` e remetente verificado, só se o dono fornecer.
 7. **Projeto Railway antigo (`noble-surprise`):** continua apontando para este repositório com o `railway.json` da raiz.
    Decidir se ele segue ativo; esta fase não o tocou.
-8. `PUBLIC_HTTP=1` confia em 1 salto: pela borda pública o IP é o real; um serviço da rede privada que chamasse
-   `site.railway.internal:8080` direto poderia escolher o próprio IP de limite/trilha. Nenhum serviço faz isso.
+8. `PUBLIC_HTTP=1` confia em `TRUST_PROXY_HOPS` saltos (padrão 2): pela borda pública o IP é o real (o penúltimo item
+   do `X-Forwarded-For`, já que a borda descarta o do visitante); um serviço da rede privada que chamasse
+   `site.railway.internal:8080` direto poderia escolher o IP de limite/trilha. Nenhum serviço faz isso.
 9. Região, plano e backup do `pg-site` (o banco guarda currículos, relatos e pedidos LGPD): decisões do usuário.
 
 ## Diferenças em relação ao guia do Chrome
@@ -258,3 +271,4 @@ node dist/admin-inicial.js --email <e-mail da pessoa> --nome "<nome>" --designac
 ## Commit do código
 
 - Fase 0: `2058ae7`
+- IP do cliente atrás da borda (`TRUST_PROXY_HOPS`, padrão 2): ver o `git log` de `src/railway.ts`.

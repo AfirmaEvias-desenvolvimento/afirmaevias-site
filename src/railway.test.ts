@@ -1,5 +1,5 @@
-// Perfil Railway (Fase 0): proxy de 1 salto com PUBLIC_HTTP=1, HOST, /health/live, migração com --runtime (papel
-// site_app só com DML) e o comando do primeiro administrador. A parte de banco roda contra o Postgres embutido do
+// Perfil Railway (Fase 0): proxy de TRUST_PROXY_HOPS saltos (padrão 2) com PUBLIC_HTTP=1, HOST, /health/live, migração
+// com --runtime (papel site_app só com DML) e o comando do primeiro administrador. A parte de banco roda contra o Postgres embutido do
 // repositório do Comercial HS (pasta temporária, porta livre, some ao fim) e PULA se ele não estiver ao lado (HS_DIR).
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
@@ -11,7 +11,8 @@ import { createServer, type AddressInfo } from 'node:net';
 import { pathToFileURL } from 'node:url';
 import Fastify from 'fastify';
 import pg from 'pg';
-import { confiancaProxy, hostEscuta, publicHttp, rotasSaude } from './railway.js';
+import rateLimit from '@fastify/rate-limit';
+import { confiancaProxy, hostEscuta, publicHttp, rotasSaude, saltosProxy } from './railway.js';
 import { aplicarRuntime, lerSql, pedeRuntime } from './migracao.js';
 import { conferirSenha, criarAdminInicial, lerPedido } from './admin-inicial.js';
 
@@ -32,17 +33,90 @@ test('PUBLIC_HTTP só liga com "1"', () => {
   assert.equal(typeof confiancaProxy({ PUBLIC_HTTP: '1' }), 'function');
 });
 
-test('PUBLIC_HTTP=1: confia em exatamente 1 salto (o IP que a borda acrescenta), ignora o X-Forwarded-For forjado', async () => {
-  const r = await ipEProtocolo({ PUBLIC_HTTP: '1' }, { 'x-forwarded-for': '6.6.6.6, 203.0.113.9', 'x-forwarded-proto': 'https' });
-  assert.equal(r.ip, '203.0.113.9');
+// Medido em produção (19/11/2026): a borda descarta o X-Forwarded-For do visitante e repassa "<cliente>, <IP da borda>";
+// o par TCP é interno da Railway. Com 1 salto só, o req.ip virava o IP da borda (46.151.194.x).
+const CLIENTE = '138.204.26.212';
+const BORDA = '46.151.194.130';
+
+test('PUBLIC_HTTP=1: padrão de 2 saltos, o cliente é o penúltimo item do X-Forwarded-For (não o IP da borda)', async () => {
+  const r = await ipEProtocolo({ PUBLIC_HTTP: '1' }, { 'x-forwarded-for': `${CLIENTE}, ${BORDA}`, 'x-forwarded-proto': 'https' });
+  assert.equal(r.ip, CLIENTE);
   assert.equal(r.protocolo, 'https');
-  const direto = await ipEProtocolo({ PUBLIC_HTTP: '1' }, {});
-  assert.equal(direto.ip, '10.0.0.7', 'sem cabeçalho, o par do socket');
+  assert.equal((await ipEProtocolo({ PUBLIC_HTTP: '1', TRUST_PROXY_HOPS: '2' }, { 'x-forwarded-for': `${CLIENTE}, ${BORDA}` })).ip, CLIENTE);
+  // se algo sobrar à esquerda (hoje a borda o descarta), continua ignorado: vale o 2º da direita
+  assert.equal((await ipEProtocolo({ PUBLIC_HTTP: '1' }, { 'x-forwarded-for': `9.9.9.9, ${CLIENTE}, ${BORDA}` })).ip, CLIENTE);
 });
 
-test('sem PUBLIC_HTTP o comportamento local não muda (trustProxy: true, primeiro IP da cadeia)', async () => {
+test('PUBLIC_HTTP=1: com menos itens que o necessário vale o mais à esquerda; sem X-Forwarded-For, o socket', async () => {
+  assert.equal((await ipEProtocolo({ PUBLIC_HTTP: '1' }, { 'x-forwarded-for': CLIENTE })).ip, CLIENTE, 'um item só');
+  assert.equal((await ipEProtocolo({ PUBLIC_HTTP: '1', TRUST_PROXY_HOPS: '3' }, { 'x-forwarded-for': `${CLIENTE}, ${BORDA}` })).ip, CLIENTE);
+  assert.equal((await ipEProtocolo({ PUBLIC_HTTP: '1' }, {})).ip, '10.0.0.7', 'sem cabeçalho, o par do socket');
+});
+
+test('PUBLIC_HTTP=1: TRUST_PROXY_HOPS=1 volta ao último item (o que o par do socket acrescentou)', async () => {
+  assert.equal(saltosProxy({ TRUST_PROXY_HOPS: '1' }), 1);
+  assert.equal((await ipEProtocolo({ PUBLIC_HTTP: '1', TRUST_PROXY_HOPS: '1' }, { 'x-forwarded-for': `${CLIENTE}, ${BORDA}` })).ip, BORDA);
+  assert.equal((await ipEProtocolo({ PUBLIC_HTTP: '1', TRUST_PROXY_HOPS: ' 1 ' }, { 'x-forwarded-for': '6.6.6.6, 203.0.113.9' })).ip, '203.0.113.9');
+});
+
+test('PUBLIC_HTTP=1: TRUST_PROXY_HOPS fora de 1 a 3 é recusado; vazio ou ausente vale 2', () => {
+  for (const ruim of ['0', '4', '-1', '2.5', '1e0', 'dois', '02', '2 3', 'true'])
+    assert.throws(() => confiancaProxy({ PUBLIC_HTTP: '1', TRUST_PROXY_HOPS: ruim }), /TRUST_PROXY_HOPS inválido.*de 1 a 3/, ruim);
+  assert.equal(saltosProxy({}), 2);
+  assert.equal(saltosProxy({ TRUST_PROXY_HOPS: '' }), 2);
+  assert.equal(saltosProxy({ TRUST_PROXY_HOPS: '3' }), 3);
+});
+
+test('PUBLIC_HTTP=1: o servidor não sobe com TRUST_PROXY_HOPS inválido, e diz por quê', () => {
+  // banco num endereço morto: o processo tem de sair antes de abrir porta ou conexão
+  const r = spawnSync(process.execPath, ['--import', 'tsx', 'src/server.ts'], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+    timeout: 30000,
+    env: {
+      ...process.env,
+      PUBLIC_HTTP: '1',
+      TRUST_PROXY_HOPS: '5',
+      DATABASE_URL: 'postgresql://ninguem@127.0.0.1:1/inexistente',
+      HOST: '127.0.0.1',
+      PORT: '0',
+      COMERCIAL_API_URL: '',
+      INTEGRACAO_PORT: '',
+      NODE_OPTIONS: ''
+    }
+  });
+  assert.equal(r.status, 1, r.stdout + r.stderr);
+  assert.match(r.stderr, /TRUST_PROXY_HOPS inválido: "5"\. Use um inteiro de 1 a 3/);
+});
+
+test('CF-Connecting-IP, X-Real-IP e Forwarded do visitante nunca viram o IP', async () => {
+  const forjados = { 'cf-connecting-ip': '9.9.9.9', 'x-real-ip': '9.9.9.8', forwarded: 'for=9.9.9.7;proto=https', 'true-client-ip': '9.9.9.6' };
+  assert.equal((await ipEProtocolo({ PUBLIC_HTTP: '1' }, { ...forjados, 'x-forwarded-for': `${CLIENTE}, ${BORDA}` })).ip, CLIENTE);
+  assert.equal((await ipEProtocolo({ PUBLIC_HTTP: '1' }, forjados)).ip, '10.0.0.7');
+  assert.equal((await ipEProtocolo({}, forjados)).ip, '10.0.0.7', 'nem no modo local');
+});
+
+test('PUBLIC_HTTP=1: o limite por IP conta o cliente, não a borda (dois clientes pela mesma borda)', async () => {
+  const app = Fastify({ trustProxy: confiancaProxy({ PUBLIC_HTTP: '1' }) });
+  await app.register(rateLimit, { global: false });
+  app.get('/limitada', { config: { rateLimit: { max: 1, timeWindow: '1 minute' } } }, async (req) => ({ ip: req.ip }));
+  const pedir = (cliente: string) =>
+    app.inject({ url: '/limitada', remoteAddress: '10.0.0.7', headers: { 'x-forwarded-for': `${cliente}, ${BORDA}` } });
+  assert.equal((await pedir(CLIENTE)).statusCode, 200);
+  assert.equal((await pedir(CLIENTE)).statusCode, 429, 'o mesmo cliente bate no limite');
+  assert.equal((await pedir('200.1.2.3')).statusCode, 200, 'outro cliente atrás da mesma borda não é bloqueado');
+  await app.close();
+});
+
+test('sem PUBLIC_HTTP o comportamento local não muda (trustProxy: true, primeiro IP da cadeia; TRUST_PROXY_HOPS ignorada)', async () => {
   const r = await ipEProtocolo({}, { 'x-forwarded-for': '6.6.6.6, 203.0.113.9' });
   assert.equal(r.ip, '6.6.6.6');
+  for (const hops of ['1', '2', '3', '9', 'dois']) {
+    assert.equal(confiancaProxy({ TRUST_PROXY_HOPS: hops }), true, hops);
+    assert.equal((await ipEProtocolo({ TRUST_PROXY_HOPS: hops }, { 'x-forwarded-for': `6.6.6.6, ${CLIENTE}, ${BORDA}` })).ip, '6.6.6.6');
+  }
+  assert.equal((await ipEProtocolo({ PUBLIC_HTTP: '0', TRUST_PROXY_HOPS: '1' }, { 'x-forwarded-for': `${CLIENTE}, ${BORDA}` })).ip, CLIENTE);
+  assert.equal((await ipEProtocolo({}, {})).ip, '10.0.0.7');
 });
 
 test('HOST: padrão 0.0.0.0 como antes; aceita :: e 127.0.0.1', () => {
