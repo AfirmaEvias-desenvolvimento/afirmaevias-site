@@ -33,6 +33,7 @@ já criadas.
 | `solicitacoes_lgpd` | Protocolo, tipo, identificação, documento opcional, detalhes, resposta e prazo | Guarda o IP do envio |
 | `consentimentos_cookies` | ID do visitante, categorias, versão da política, hash de IP e navegador | Uma linha por registro de escolha |
 | `auditoria` | Ator, ação, entidade, detalhes, IP e data | FK de usuário vira NULL se a conta for excluída |
+| `atividade_usuario_hora` | Id da conta do painel e início da hora (UTC) | Painel Infra (`GET /api/wallpaper/usuarios`). Uma linha por conta e hora com requisição autenticada; sem IP, navegador, rota ou ação. Cascata com `admin_usuarios`. O `site_app` tem só INSERT, SELECT e DELETE nela |
 
 As cinco coleções públicas não possuem chaves estrangeiras entre si. Uma pessoa
 pode aparecer em mais de uma coleção sem haver cadastro unificado de titular.
@@ -60,6 +61,7 @@ provedores. O repositório não contém rotina de backup/restauração do banco.
 | Consentimentos | Exclui após 5 anos de `criado_em` |
 | Tentativas de login | Exclui após 24 horas de `criado_em` |
 | Auditoria | Exclui após 12 meses de `criado_em` |
+| Atividade por hora das contas do painel | Exclui após 7 dias de `hora` |
 | Sessões | Limpa expiradas a cada hora; autenticação já recusa sessão vencida |
 | Relatos de integridade | Não têm descarte automático implementado |
 
@@ -73,6 +75,14 @@ o último contato, mas a rotina usa a criação do registro; para relatos, o tex
 publicado prevê apuração mais cinco anos, enquanto o schema não possui uma data
 específica de encerramento usada pelo descarte. Esses pontos exigem alinhamento
 entre regra de negócio, política e implementação.
+
+**Atividade por hora do painel (Painel Infra, 25/11/2026).** Conteúdo: id da conta
+do `/admin` e a hora. Finalidade: métrica operacional agregada (total de contas
+ativas, contas ativas nas últimas 24 h e série por hora no papel de parede do
+Painel Infra); a rota devolve só números. Retenção: 7 dias. Os titulares são as
+pessoas da equipe com conta no painel, não visitantes. A política publicada já
+diz que acessos da equipe ao painel ficam até 12 meses na trilha do painel; este
+registro é mais curto e mais restrito, por isso o texto público não mudou.
 
 `config.versaoPolitica` registra `2026-10-20` nas escolhas de cookies. O texto
 publicado tem versão editorial `1.1`, atualizado em 20/10/2026. Ao mudar a política,

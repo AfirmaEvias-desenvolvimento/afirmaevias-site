@@ -34,6 +34,13 @@ após oito falhas por e-mail em 15 minutos, persistido no banco. A resposta de
 falha é genérica, e contas ausentes/inativas também passam por comparação bcrypt.
 O plugin de limite por IP usa armazenamento padrão em memória do processo.
 
+Painel Infra: quando a sessão é reconhecida (`usuarioDaRequisicao`) e no login,
+`src/auth.ts` marca a conta como ativa na hora corrente em `atividade_usuario_hora`
+(id da conta e hora; uma gravação por conta e hora, sem segurar a resposta). A rota
+`GET /api/wallpaper/usuarios` não usa sessão: só o Bearer `WALLPAPER_STATS_TOKEN`,
+comparado em tempo constante; sem a variável ou com menos de 32 caracteres, sempre 401.
+Ela fica fora do limite por IP, não gera log de acesso e devolve só contagens.
+
 ## Permissões efetivas
 
 | Ação | Editor ativo | Admin ativo |

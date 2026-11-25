@@ -142,6 +142,7 @@ node dist/migrate.js --runtime
 | `COMERCIAL_MTLS_CERT` | `/tmp/arq/COMERCIAL_MTLS_CERT_CONTEUDO` (cliente `URI:urn:aevias:service:institucional-api`) | caminho; `COMERCIAL_MTLS_CERT_CONTEUDO` (Fase 4) |
 | `COMERCIAL_MTLS_KEY` | `/tmp/arq/COMERCIAL_MTLS_KEY_CONTEUDO` | caminho; `COMERCIAL_MTLS_KEY_CONTEUDO` (Fase 4) |
 | `RESEND_API_KEY`, `EMAIL_REMETENTE`, `EMAIL_CONTATO`, `EMAIL_RH`, `EMAIL_COMPLIANCE`, `EMAIL_ENCARREGADO` | só se o dono fornecer; sem `RESEND_API_KEY` os avisos ficam na fila do banco e tudo segue no `/admin` | não |
+| `WALLPAPER_STATS_TOKEN` | Painel Infra: o mesmo valor de todos os sistemas (gravado pelo coordenador); ver "Painel Infra" abaixo | não |
 
 O `site` **pode subir antes da Fase 4**: sem os arquivos `COMERCIAL_MTLS_*`, a conexão 1 fica desligada (um aviso
 "integração com o Comercial desligada" no log) e os contatos ficam só no `/admin`. Depois da Fase 4, um restart a liga.
@@ -184,6 +185,19 @@ Não crie no `site`: `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NOME` (senha de pes
 
 O migrate do site lê `DATABASE_URL` (não `MIGRATION_DATABASE_URL`): no `site-migrate` ela é a credencial do dono, no `site`
 é a do `site_app`. Nenhuma outra variável.
+
+### Painel Infra (`GET /api/wallpaper/usuarios`, 25/11/2026)
+
+- **Serviço que lê a variável:** só o `site` (no projeto `aevias-hipersistema` ele se chama `institucional`, domínio
+  `sae-institucional.up.railway.app`). O `site-migrate` não lê.
+- **Ordem:** `site-migrate` primeiro (cria `atividade_usuario_hora` e tira o `UPDATE` do `site_app` nela; sem SQL manual),
+  depois o `site`/`institucional`. Se o `site` subir antes, o login segue normal (o registro falha em silêncio, com um
+  aviso por hora no log) e a rota responde 503 até o migrate rodar.
+- **Acesso:** direto pelo domínio público do serviço (não há proxy web/api no Site):
+  `curl -s -H "Authorization: Bearer $WALLPAPER_STATS_TOKEN" https://sae-institucional.up.railway.app/api/wallpaper/usuarios`.
+- **Contagem:** contas do painel `/admin` (`admin_usuarios.ativo`); visitantes, leads e candidatos não contam. Atividade é
+  login ou requisição autenticada do painel, uma linha por conta e hora, descartada em 7 dias pela rotina de retenção.
+- Sem a variável (ou com menos de 32 caracteres) a rota responde sempre 401. Sem log de acesso e fora do limite por IP.
 
 ## Conexões do Site
 

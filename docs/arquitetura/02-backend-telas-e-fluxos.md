@@ -28,6 +28,7 @@
 | `POST /programa-de-integridade` | Grava relato direto e gera protocolo `INT` |
 | `POST /portal-do-titular` | Grava solicitação e gera protocolo `LGPD` |
 | `POST /api/consentimento` | Registra a escolha de cookies; retorna JSON |
+| `GET /api/wallpaper/usuarios` | Painel Infra: só números das contas do `/admin` (total ativo, ativas em 24 h, série por hora). Exige `Authorization: Bearer <WALLPAPER_STATS_TOKEN>`; sem a variável (ou com menos de 32 caracteres) responde sempre 401. Cache de 60 s, sem log de acesso e fora do limite por IP (`src/wallpaper.ts`) |
 
 O sitemap contém 12 páginas institucionais; não inclui a página extra, o painel
 nem consultas de protocolo. `robots.txt` desautoriza `/admin`, mas não substitui

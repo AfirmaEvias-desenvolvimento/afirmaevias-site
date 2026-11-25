@@ -391,3 +391,15 @@ DROP TRIGGER IF EXISTS avisos_email ON relatos_integridade;
 CREATE TRIGGER avisos_email AFTER INSERT OR DELETE ON relatos_integridade FOR EACH ROW EXECUTE FUNCTION fila_aviso_formulario('relato');
 DROP TRIGGER IF EXISTS avisos_email ON solicitacoes_lgpd;
 CREATE TRIGGER avisos_email AFTER INSERT OR DELETE ON solicitacoes_lgpd FOR EACH ROW EXECUTE FUNCTION fila_aviso_formulario('lgpd');
+
+-- ------------------------------------------------- Painel Infra (wallpaper)
+-- Atividade das contas do /admin por hora, so para a metrica agregada de GET /api/wallpaper/usuarios (src/wallpaper.ts).
+-- Guarda apenas o id da conta e o inicio da hora em UTC: nada de IP, navegador, rota ou acao. Uma linha por conta e hora,
+-- gravada na primeira requisicao autenticada da hora (src/auth.ts). Descarte apos 7 dias (src/regras-retencao.ts).
+-- Excluir a conta apaga as linhas dela. O runtime (site_app) tem so INSERT, SELECT e DELETE nesta tabela (db/runtime.sql).
+CREATE TABLE IF NOT EXISTS atividade_usuario_hora (
+  usuario_id  UUID        NOT NULL REFERENCES admin_usuarios(id) ON DELETE CASCADE,
+  hora        TIMESTAMPTZ NOT NULL,
+  PRIMARY KEY (usuario_id, hora)
+);
+CREATE INDEX IF NOT EXISTS atividade_usuario_hora_hora_idx ON atividade_usuario_hora (hora);

@@ -47,6 +47,12 @@ export const REGRAS: Regra[] = [
   {
     rotulo: 'consentimentos de cookies com mais de 5 anos',
     sql: `DELETE FROM consentimentos_cookies WHERE criado_em < now() - interval '5 years'`
+  },
+  {
+    // Painel Infra (src/wallpaper.ts): id da conta do painel + hora, so para a metrica agregada. A serie mostra 24 h;
+    // 7 dias bastam. A coluna de data desta tabela e `hora` (inicio da hora em UTC), nao criado_em.
+    rotulo: 'atividade por hora das contas do painel com mais de 7 dias',
+    sql: `DELETE FROM atividade_usuario_hora WHERE hora < now() - interval '7 days'`
   }
 ];
 

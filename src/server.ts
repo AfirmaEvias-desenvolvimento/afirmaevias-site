@@ -21,6 +21,7 @@ import { asset } from './assets.js';
 import { dadosEstruturados } from './seo.js';
 import { linhasDeTitulo } from './utils.js';
 import { confiancaProxy, hostEscuta, rotasSaude } from './railway.js';
+import { rotaWallpaper } from './wallpaper.js';
 import { rotasSite } from './routes/site.js';
 import { rotasFormularios } from './routes/forms.js';
 import { rotasAdmin } from './routes/admin.js';
@@ -124,6 +125,9 @@ app.addHook('onSend', async (req, reply, payload) => {
 
 // /health/live (processo de pé, healthcheck da Railway) e /health (confere o banco, como sempre)
 rotasSaude(app, () => pool.query('SELECT 1'));
+
+// Painel Infra: GET /api/wallpaper/usuarios, só números, Bearer WALLPAPER_STATS_TOKEN, sem rate limit e sem log de acesso
+rotaWallpaper(app, { banco: pool });
 
 await app.register(rotasSite);
 await app.register(rotasFormularios);

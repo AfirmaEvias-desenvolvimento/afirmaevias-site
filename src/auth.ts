@@ -1,11 +1,16 @@
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { consultar, consultarUm } from './db.js';
+import { consultar, consultarUm, pool } from './db.js';
 import { producao } from './config.js';
+import { criarRegistroAtividade } from './wallpaper.js';
 
 export const COOKIE_SESSAO = 'ae_sessao';
 const DURACAO_HORAS = 12;
+
+// Painel Infra (src/wallpaper.ts): marca a conta como ativa na hora corrente. Uma gravação por conta e hora, sem segurar
+// a resposta e sem derrubar a requisição se o banco falhar.
+const registrarAtividade = criarRegistroAtividade(pool);
 
 export type UsuarioAdmin = {
   id: string;
@@ -47,6 +52,7 @@ export async function abrirSessao(reply: FastifyReply, usuario: UsuarioAdmin, ip
     [token, usuario.id, ip, userAgent.slice(0, 400), expira]
   );
   await consultar('UPDATE admin_usuarios SET ultimo_acesso = now() WHERE id = $1', [usuario.id]);
+  registrarAtividade(usuario.id);
   reply.setCookie(COOKIE_SESSAO, token, {
     path: '/',
     httpOnly: true,
@@ -80,6 +86,7 @@ export async function usuarioDaRequisicao(request: FastifyRequest): Promise<Usua
       WHERE s.token = $1 AND s.expira_em > now() AND u.ativo = TRUE`,
     [aberto.value]
   );
+  if (linha) registrarAtividade(linha.id);
   return linha;
 }
 

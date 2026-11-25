@@ -25,7 +25,9 @@ test('toda regra tem rótulo legível e SQL', () => {
 test('toda regra recorta por data — nenhuma varre a tabela inteira', () => {
   for (const { rotulo, sql } of REGRAS) {
     assert.match(sql, /\bWHERE\b/i, `sem WHERE: ${rotulo}`);
-    assert.match(sql, /criado_em\s*<\s*now\(\)\s*-\s*interval/i, `sem recorte por data: ${rotulo}`);
+    // `hora` só na atividade por hora do painel (Painel Infra), cuja coluna de data é o início da hora
+    const coluna = /\batividade_usuario_hora\b/.test(sql) ? 'hora' : 'criado_em';
+    assert.match(sql, new RegExp(`\\b${coluna}\\s*<\\s*now\\(\\)\\s*-\\s*interval`, 'i'), `sem recorte por data: ${rotulo}`);
   }
 });
 
@@ -60,7 +62,9 @@ test('os prazos declarados continuam sendo os da política', () => {
     solicitacoes_lgpd: '5 years',
     consentimentos_cookies: '5 years',
     tentativas_login: '24 hours',
-    auditoria: '12 months'
+    auditoria: '12 months',
+    // Painel Infra: conta + hora, dentro do que a política diz da trilha do painel (acessos da equipe, até 12 meses)
+    atividade_usuario_hora: '7 days'
   };
 
   for (const [tabela, prazo] of Object.entries(esperado)) {

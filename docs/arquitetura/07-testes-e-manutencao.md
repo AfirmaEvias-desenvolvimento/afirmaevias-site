@@ -18,6 +18,8 @@ Os testes atuais não precisam de banco, chaves da Resend ou serviços externos.
 | `src/utils.test.ts` | Normalização de entrada, validação, CSV, anexos, assinatura de arquivo, protocolos, hash e títulos |
 | `src/retencao.test.ts` | Estrutura das regras SQL, recorte por data e correspondência de prazos com conteúdo publicado |
 | `src/terceiros.test.ts` | Recursos externos nas views/CSS/JS, ausência de analytics conhecidos e CSP base |
+| `src/wallpaper.test.ts` | Painel Infra: 401, formato (24 horas cheias em UTC, zeros, nada pessoal), cache de 60 s, sem log, fora do rate limit e deduplicação do registro |
+| `src/wallpaper-banco.test.ts` | Painel Infra com Postgres embutido (pula sem `HS_DIR`): privilégios do `site_app`, regras de contagem, `ON CONFLICT`, descarte de 7 dias, cascata, gancho da sessão e tempo da consulta |
 
 O teste de terceiros permite explicitamente `public/js/extra.js`, que carrega
 YouTube. As verificações são estáticas; não provam ausência de toda comunicação

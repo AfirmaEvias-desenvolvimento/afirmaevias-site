@@ -39,6 +39,7 @@ existência do arquivo `.env` não o carrega: não há `dotenv` na aplicação.
 | `EMAIL_REMETENTE` | Padrão `site@afirmaevias.com.br`; requer configuração correspondente no provedor |
 | `EMAIL_CONTATO`, `EMAIL_RH`, `EMAIL_COMPLIANCE` | Destinos, padrão `comercial@afirmaevias.com.br` |
 | `EMAIL_ENCARREGADO` | Destino dos avisos de titular, padrão `privacidade@afirmaevias.com.br` |
+| `WALLPAPER_STATS_TOKEN` | Bearer de `GET /api/wallpaper/usuarios` (Painel Infra), o mesmo valor em todos os sistemas; ausente ou com menos de 32 caracteres, a rota responde sempre 401 |
 
 Sem `SESSION_SECRET`, desenvolvimento usa valor fixo de desenvolvimento;
 produção gera segredo aleatório por inicialização e avisa no log. Reiniciar

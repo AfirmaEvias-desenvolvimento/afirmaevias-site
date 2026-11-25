@@ -278,6 +278,16 @@ test('banco real: migrate --runtime dá ao site_app só DML, e o site funciona c
     assert.ok((await app.query('SELECT count(*)::int AS n FROM integracao_stream')).rows[0].n >= 1, 'gatilho do feed gravou com o site_app');
     await app.query('DELETE FROM contatos WHERE id = $1', [contato.id]);
 
+    // Painel Infra: na atividade por hora o runtime só tem INSERT, SELECT e DELETE (sem UPDATE)
+    for (const [privilegio, esperado] of [['INSERT', true], ['SELECT', true], ['DELETE', true], ['UPDATE', false]] as const) {
+      const r: pg.QueryResult<{ ok: boolean }> = await app.query(
+        `SELECT has_table_privilege('site_app', 'atividade_usuario_hora', $1) AS ok`,
+        [privilegio]
+      );
+      assert.equal(r.rows[0].ok, esperado, `atividade_usuario_hora ${privilegio}`);
+    }
+    await assert.rejects(app.query('UPDATE atividade_usuario_hora SET hora = hora'), /permission denied|permissão negada/);
+
     // o que o processo faz ao subir e de hora em hora, com o papel restrito
     process.env.DATABASE_URL = urlApp.toString();
     process.env.NODE_ENV = 'development';

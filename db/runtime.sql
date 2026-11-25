@@ -32,6 +32,9 @@ GRANT USAGE ON SCHEMA public TO site_app;
 
 -- DML em todas as tabelas do site (formulários, painel, retenção, fila do Comercial, avisos e feed do RH)
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO site_app;
+-- Painel Infra (src/wallpaper.ts): atividade_usuario_hora so precisa de INSERT (registro), SELECT (contagem) e DELETE
+-- (descarte de 7 dias); sem UPDATE
+REVOKE UPDATE ON atividade_usuario_hora FROM site_app;
 -- BIGSERIAL do feed (integracao_stream) e qualquer outra sequence
 GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO site_app;
 -- funções do schema (gen_random_uuid do pgcrypto, gatilhos do feed e da eliminação)
