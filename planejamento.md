@@ -64,7 +64,7 @@ Há tabelas `admin_usuarios`, `admin_sessoes`, `contatos`, `candidaturas`, `rela
 ## I04 — Formulários, progresso e notificações confiáveis
 
 - [ ] Preservar contato, candidatura, protocolo de integridade, solicitações de privacidade e consentimento. Nova autorização técnica não muda a semântica dos campos nem transforma visitante em empregado.
-- [ ] Persistir submissão e registro de notificação/outbox na mesma transação; SMTP/Resend indisponível não pode produzir uma falsa confirmação de envio ou apagar a submissão persistida. UI diferencia recebido de notificação pendente.
+- [ ] Persistir submissão e registro de notificação/outbox na mesma transação; Resend indisponível não pode produzir uma falsa confirmação de envio ou apagar a submissão persistida. UI diferencia recebido de notificação pendente.
 - [ ] Implementar chave de idempotência por tentativa/formulário com hash do payload e conflito para chave reutilizada com conteúdo diferente. Retry após resposta perdida não duplica candidatura/protocolo.
 - [ ] Verificar core antes de aceitar operação. Se uma requisição já confirmada no DB perdeu a resposta, retry retorna o mesmo resultado após revalidação; nenhuma tentativa de “desfazer” registro só por falha posterior de e-mail.
 - [ ] Quando core cai antes do envio, preservar rascunho em memória da página e informar indisponibilidade; não salvar relatos/CPF/currículos automaticamente em localStorage. Refresh pode perder esse rascunho e deve ser explicado, sem promessa de persistência inexistente.

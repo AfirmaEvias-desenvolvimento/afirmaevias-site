@@ -52,7 +52,7 @@ Compose de referência em AUTH `infra/ecossistema/compose.yml` inclui perfis `co
 | `PHOTO_ENCRYPTION_KEY_FILE` e anterior | Ponto | Independente de segredo de sessão/AUTH |
 | `TWOFA_ENCRYPTION_KEY_FILE` e anterior | Controle | Não perder TOTP/evidência na troca de login |
 | `FILES_DIR`, `PRIVATE_FILES_DIR`, `LOCAL_STORAGE_DIR` | Controle/Lab conforme driver | Volumes exclusivos e backup |
-| `SMTP_*_FILE`/configuração não secreta | AUTH e remetentes | Produção exige entrega de convite/recuperação testada |
+| `RESEND_API_KEY` (segredo) e `EMAIL_FROM` | AUTH e sistemas que enviam e-mail (API do Resend, sem SMTP) | Produção exige entrega de convite/recuperação testada |
 | Configuração offsite de backup | Operação | Conta separada, chave fora do host e restore testado |
 
 Não manter fallback de autenticação local em produção (`AUTH_COMPARTILHADO=0`, GoTrue do app, `DEV_AUTH`, contas fixas). Durante desenvolvimento, usar perfil de teste isolado com issuer/mock explícito; o build de produção recusa flags de bypass e issuer `.test`/loopback. Nunca detectar “teste” apenas pela ausência de segredo.

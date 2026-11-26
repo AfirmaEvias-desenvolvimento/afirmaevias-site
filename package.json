@@ -15,6 +15,7 @@
     "postbuild": "node -e \"require('fs').cpSync('src/views','dist/views',{recursive:true})\"",
     "test": "vitest run && npm run test:db",
     "e2e:conexao-1": "node scripts/e2e-conexao-1.mjs",
+    "email:testar": "node --import tsx scripts/testar-email.mjs",
     "test:db": "tsc -p tsconfig.json && node --test dist/eliminacao-comercial.test.js dist/integracao-feed.test.js"
   },
   "dependencies": {
@@ -30,7 +31,8 @@
     "bcryptjs": "^2.4.3",
     "ejs": "^3.1.10",
     "fastify": "^5.2.1",
-    "pg": "^8.13.1"
+    "pg": "^8.13.1",
+    "resend": "6.38.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

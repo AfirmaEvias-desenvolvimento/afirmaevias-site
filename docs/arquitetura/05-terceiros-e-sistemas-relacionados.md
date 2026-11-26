@@ -2,6 +2,7 @@
 
 > Inventário conferido em 21/10/2026 em `src/notificacoes.ts`, `src/content.ts`,
 > `src/server.ts`, views, scripts públicos, `railway.json` e workflow de CI.
+> E-mail revisto em 26/11/2026: envio só por `src/email.ts` (SDK oficial do Resend).
 > A presença de um domínio no código não comprova contrato, região ou serviço ativo.
 
 ## Fronteiras de comunicação
@@ -30,8 +31,8 @@ flowchart TB
 | Serviço / terceiro | Relação e acionamento | Dados envolvidos | Configuração / evidência |
 |---|---|---|---|
 | Railway | Destino de hospedagem e banco; inicialização e healthcheck definidos | Dados persistidos no banco, requisições e saída de logs conforme configuração do serviço | `railway.json`, `src/db.ts`, README; conta/região/retenção de logs a confirmar na operação |
-| Resend | API do servidor, somente se `RESEND_API_KEY` existir e após gravar formulário | Remetente, destinatário, assunto, HTML de aviso e metadados descritos abaixo | `src/notificacoes.ts`; `POST https://api.resend.com/emails` |
-| Provedor de e-mail da equipe | Recebe os avisos entregues pela Resend | Destinatário e conteúdo do aviso | `EMAIL_*`; fornecedor e retenção da caixa não identificados no código |
+| Resend | API do servidor pelo SDK oficial (`resend`), somente com `RESEND_API_KEY` e `EMAIL_FROM` e depois de gravar o formulário (fila do banco) | Remetente, destinatário, assunto, HTML de aviso e metadados descritos abaixo | `src/email.ts` (único ponto de envio), chamado por `src/notificacoes.ts`; `POST /emails` da API do Resend; domínio `afirmaevias.com.br` na região `sa-east-1`, só envio |
+| Provedor de e-mail da equipe | Recebe os avisos entregues pela Resend | Destinatário e conteúdo do aviso | `EMAIL_CONTATO`, `EMAIL_RH`, `EMAIL_COMPLIANCE`, `EMAIL_ENCARREGADO`; fornecedor e retenção da caixa não identificados no código |
 | Cloudflare | DNS orientado pelo README | Resolução do domínio; dados de tráfego HTTP somente se proxy estiver habilitado | Não há API/SDK Cloudflare no site; modo DNS/proxy a confirmar |
 | GitHub / GitHub Actions | Repositório e verificações de push/PR para `main` | Código e saídas da CI; workflow não configura acesso ao banco de produção | `.github/workflows/ci.yml`; vínculo de deploy na Railway a confirmar |
 | npm registry | Instalação das dependências do build e CI | Solicitações de pacotes e metadados técnicos de instalação | `package.json`, `package-lock.json`, `npm ci` |
@@ -48,27 +49,31 @@ dependem de evidência administrativa. Não são dedutíveis do link ou do códi
 
 ## Contrato implementado com a Resend
 
-O servidor chama a API com `Authorization: Bearer`, `Content-Type: application/json`
-e timeout de oito segundos. O payload contém `from`, `to`, `subject` e `html`.
-O HTML inclui link para uma lista do painel; não inclui token de sessão.
-Em desenvolvimento o assunto recebe o prefixo `[teste]`.
+`src/email.ts` é o único código que envia e-mail. Ele usa o SDK oficial do Resend,
+que manda `Authorization: Bearer <RESEND_API_KEY>` e `Content-Type: application/json`;
+o módulo põe `Idempotency-Key` (`site-aviso/<id da fila>`, estável nas retentativas)
+e timeout de oito segundos. O payload contém `from` (sempre o `EMAIL_FROM`), `to`,
+`subject` e `html`. O HTML inclui link para uma lista do painel; não inclui token de
+sessão. Em desenvolvimento o assunto recebe o prefixo `[teste]`.
 
 | Formulário | Informação enviada no aviso | Destinatário configurável |
 |---|---|---|
 | Contato | Aviso genérico e link da lista | `EMAIL_CONTATO` |
-| Candidatura | Área informada e aviso genérico; sem currículo anexo | `EMAIL_RH` |
-| Integridade | Protocolo, categoria e indicação anônimo/identificado | `EMAIL_COMPLIANCE` |
-| Titular | Protocolo, tipo do pedido e referência ao prazo | `EMAIL_ENCARREGADO` |
+| Candidatura | Aviso genérico e link da lista; sem currículo anexo | `EMAIL_RH` |
+| Integridade | Aviso genérico e link da lista | `EMAIL_COMPLIANCE` |
+| Titular | Aviso genérico e link da lista | `EMAIL_ENCARREGADO` |
 
-Os handlers não incluem nos avisos nome, e-mail do visitante, telefone, documento,
-texto da mensagem, relato ou detalhes do pedido. Área e categoria são valores
-fornecidos pelo usuário: o código não deve ser interpretado como garantia de
-que esses campos jamais contenham informação pessoal.
+Os avisos não incluem nome, e-mail do visitante, telefone, documento, texto da
+mensagem, relato, protocolo ou detalhes do pedido: só o tipo (no assunto) e o link.
 
-Sem chave, o envio é ignorado com aviso no log. Erro HTTP, timeout ou exceção
-são registrados sem desfazer a gravação do formulário. Não há fila persistente,
-retentativa automática, webhook de entrega nem confirmação de leitura. O painel
-é a fonte para acompanhar os recebimentos, inclusive quando um e-mail falha.
+Sem `RESEND_API_KEY` ou sem `EMAIL_FROM` nada sai: o servidor avisa no log ao subir
+e os avisos ficam na fila do banco até a configuração e um reinício. O SDK devolve
+`{ data, error }`; o erro (nome, status e mensagem, sem a chave e sem o cabeçalho
+`Authorization`) vai para o log como `email_falhou`, e o aviso volta à fila com recuo
+até uma hora (`aviso_email_falhou`), sem desfazer a gravação do formulário. Não há
+webhook de entrega nem confirmação de leitura: aceite do Resend não comprova a
+chegada na caixa. O painel é a fonte para acompanhar os recebimentos, inclusive
+quando um e-mail falha.
 
 ## Exceção do YouTube
 
@@ -106,7 +111,7 @@ desse serviço. Autenticar no site não autentica automaticamente nos outros app
 |---|---|
 | Aplicação / hospedagem | Páginas e formulários ficam indisponíveis |
 | PostgreSQL | Formulários e painel falham; `/health` deixa de retornar sucesso; páginas sem consulta podem continuar renderizando |
-| Resend / caixa da equipe | Registro permanece no banco; aviso pode não chegar |
+| Resend / caixa da equipe | Registro permanece no banco; o aviso fica na fila e é retentado com recuo, mas pode não chegar |
 | DNS do domínio | O acesso pelo domínio depende da resolução; não existe fallback de DNS na aplicação |
 | Canal externo / WhatsApp / redes / Maps / Ponto | O destino do link pode falhar; não há dependência de API no site |
 | YouTube | Player da página extra pode falhar; páginas institucionais não dependem dele |

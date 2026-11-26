@@ -1,7 +1,9 @@
 // Fila persistente: o banco grava o aviso na mesma transação do formulário.
 // O corpo nunca copia nome, mensagem, currículo ou dados do titular.
+// O envio sai só pelo módulo de e-mail (src/email.ts: SDK do Resend, remetente EMAIL_FROM).
 import { pool } from './db.js';
 import { config, producao } from './config.js';
+import { configuracaoEmail, enviarEmail, type EnviarEmail } from './email.js';
 
 type Tipo = 'contato' | 'candidatura' | 'relato' | 'lgpd';
 const modelos: Record<Tipo, { assunto: string; caminho: string; destino: string }> = {
@@ -19,9 +21,9 @@ type Banco = { query: (sql: string, params?: any[]) => Promise<{ rows: any[] }> 
 let rodando = false;
 
 // Uma reserva por vez, com SKIP LOCKED e expiração, permite vários processos e recuperação após queda.
-export async function processarFilaAvisos(banco: Banco = pool, enviar: typeof fetch = fetch) {
-  const chave = process.env.RESEND_API_KEY;
-  if (!chave || rodando) return;
+// Sem RESEND_API_KEY ou EMAIL_FROM não reserva nada: os avisos ficam na fila até o envio ser configurado.
+export async function processarFilaAvisos(banco: Banco = pool, enviar: EnviarEmail = enviarEmail) {
+  if (!configuracaoEmail().configurado || rodando) return;
   rodando = true;
   try {
     for (let i = 0; i < 20; i++) {
@@ -33,19 +35,19 @@ export async function processarFilaAvisos(banco: Banco = pool, enviar: typeof fe
       const aviso = rows[0] as Linha | undefined;
       if (!aviso) break;
       const modelo = modelos[aviso.tipo];
+      // Só códigos técnicos vão para o log: o nome do erro do Resend (o detalhe sem a chave já saiu em email_falhou).
+      let motivo = 'excecao_no_envio';
       try {
-        const resposta = await enviar('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${chave}`, 'Content-Type': 'application/json', 'Idempotency-Key': `site-aviso/${aviso.id}` },
-          body: JSON.stringify({
-            from: `Site Afirma E-vias <${process.env.EMAIL_REMETENTE ?? 'site@afirmaevias.com.br'}>`,
-            to: [process.env[modelo.destino] ?? destinosPadrao[aviso.tipo]],
-            subject: producao ? modelo.assunto : `[teste] ${modelo.assunto}`,
-            html: `<p>Há um novo registro. Consulte o painel com acesso controlado.</p><p><a href="${config.siteUrl.replace(/\/$/, '')}${modelo.caminho}">Abrir no painel</a></p>`
-          }),
-          signal: AbortSignal.timeout(8000)
-        });
-        if (!resposta.ok) throw new Error(`http_${resposta.status}`);
+        const resultado = await enviar({
+          para: [process.env[modelo.destino] ?? destinosPadrao[aviso.tipo]],
+          assunto: producao ? modelo.assunto : `[teste] ${modelo.assunto}`,
+          html: `<p>Há um novo registro. Consulte o painel com acesso controlado.</p><p><a href="${config.siteUrl.replace(/\/$/, '')}${modelo.caminho}">Abrir no painel</a></p>`
+        }, { idempotencia: `site-aviso/${aviso.id}`, ref: `aviso:${aviso.id}` });
+        if (!resultado.ok) {
+          motivo = resultado.motivo === 'erro_resend' ? resultado.erro.nome : resultado.motivo;
+          throw new Error(motivo);
+        }
+        motivo = 'erro_ao_baixar_da_fila';
         await banco.query('DELETE FROM avisos_email_fila WHERE id = $1 AND reserva = $2', [aviso.id, aviso.reserva]);
       } catch {
         const tentativas = aviso.tentativas + 1;
@@ -53,7 +55,7 @@ export async function processarFilaAvisos(banco: Banco = pool, enviar: typeof fe
         await banco.query(`UPDATE avisos_email_fila SET tentativas = $3, reserva = NULL,
           proxima_tentativa = now() + $4 * interval '1 second' WHERE id = $1 AND reserva = $2`,
           [aviso.id, aviso.reserva, tentativas, espera]);
-        console.error(JSON.stringify({ codigo: 'aviso_email_falhou', fila: aviso.id, tentativas }));
+        console.error(JSON.stringify({ codigo: 'aviso_email_falhou', fila: aviso.id, tentativas, erro: motivo }));
       }
     }
   } catch (erro) {
@@ -62,8 +64,9 @@ export async function processarFilaAvisos(banco: Banco = pool, enviar: typeof fe
 }
 
 export function iniciarFilaAvisos() {
-  if (!process.env.RESEND_API_KEY) {
-    console.warn('RESEND_API_KEY ausente: avisos serão mantidos na fila até configurar o envio');
+  const { configurado, faltando } = configuracaoEmail();
+  if (!configurado) {
+    console.warn(`E-mail desligado (falta ${faltando.join(' e ')}): os avisos ficam na fila do banco até configurar o envio e reiniciar`);
     return;
   }
   const intervalo = Math.max(1000, Number(process.env.AVISOS_FILA_INTERVALO_MS) || 60_000);

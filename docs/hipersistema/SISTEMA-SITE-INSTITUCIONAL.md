@@ -54,7 +54,8 @@ src/auth.ts, audit.ts         sessão/senha/freio de login do painel; trilha de 
 src/retencao.ts, regras-retencao.ts   descarte automático
 src/comercial*.ts, eliminacao-comercial.ts   conexão 1 (leads ao Comercial) e pendência de eliminação
 src/integracao-*.ts           feed ao RH (contrato, produtor, listener mTLS)
-src/notificacoes.ts           aviso por e-mail via Resend (sem conteúdo pessoal)
+src/email.ts                  único envio de e-mail: SDK oficial do Resend, remetente só EMAIL_FROM
+src/notificacoes.ts           fila de avisos por e-mail à equipe, enviados por email.ts (sem conteúdo pessoal)
 db/schema.sql                 schema idempotente (tabelas, funções, triggers)
 contracts/vendor/auth-v1/     pacote de contrato vendorizado (manifest + schemas), nunca editado
 src/views/{pages,admin,partials}/   templates EJS
@@ -108,7 +109,8 @@ padrão 3000). Não há `dotenv`: o `.env` só vale se carregado por `--env-file
 
 Variáveis (de `src/config.ts`, `.env.example`, `integracao-servidor.ts`): obrigatória `DATABASE_URL`; opcionais `PORT`,
 `HOST`, `NODE_ENV`, `SESSION_SECRET`, `SITE_URL`, `PORTAL_CLIENTE_URL` (https; vazio desliga o link), `ADMIN_*`, `RESEND_API_KEY`
-e `EMAIL_*`, `COMERCIAL_*` (conexão 1), `INTEGRACAO_*` e `RELEASE_ID` (feed). Sem `SESSION_SECRET` em produção o segredo é
+e `EMAIL_FROM` (e-mail; sem uma das duas, desligado), os destinos `EMAIL_CONTATO`/`EMAIL_RH`/`EMAIL_COMPLIANCE`/`EMAIL_ENCARREGADO`,
+`COMERCIAL_*` (conexão 1), `INTEGRACAO_*` e `RELEASE_ID` (feed). Sem `SESSION_SECRET` em produção o segredo é
 sorteado a cada boot e o painel desloga a cada reinício.
 
 ## 4. Modelo de dados e retenção
@@ -266,8 +268,9 @@ Conexão 1 do hipersistema, detalhada em [conexao-1-comercial.md](conexao-1-come
 
 ### 7.3 Outras integrações
 
-- **Resend** (`notificacoes.ts`): avisos por e-mail à equipe, sem identidade nem conteúdo (candidaturas incluem a área;
-  relatos, protocolo/categoria/anonimato; LGPD, protocolo/tipo). Sem `RESEND_API_KEY` fica desligado; sem fila de reenvio.
+- **Resend** (`email.ts`, SDK oficial; chamado por `notificacoes.ts`): avisos por e-mail à equipe, sem identidade nem
+  conteúdo (só o tipo no assunto e o link do painel), remetente `EMAIL_FROM`. Sem `RESEND_API_KEY` ou `EMAIL_FROM` fica
+  desligado e os avisos esperam na fila do banco (`avisos_email_fila`), com reenvio e recuo até 1 h.
 - **AUTH**: usado apenas pelo listener do feed (autorização do par). Não participa do login do `/admin`.
 - Terceiros (Railway, Cloudflare, GitHub, YouTube, canal externo de denúncias): ver `docs/arquitetura/05-terceiros-e-sistemas-relacionados.md`.
 
@@ -321,7 +324,8 @@ bancos descartáveis; resultado em `.data/e2e/resultado-conexao-1.json`). Neste 
 2. Currículos em `bytea` no Postgres: o banco e o backup crescem com cada anexo; storage externo é decisão em aberto.
 3. Relatos de integridade sem descarte automático; o término da apuração não é um campo explícito no schema (**não
    verificado** como é registrado).
-4. Sem fila de reenvio dos e-mails de aviso; sem `RESEND_API_KEY` ficam desligados.
+4. Sem `RESEND_API_KEY` ou `EMAIL_FROM` os e-mails de aviso ficam desligados (esperam na fila); a fila não tem painel
+   de alerta nem expiração, e aceite do Resend não comprova a chegada na caixa.
 5. Painel sem MFA, sem redefinição administrativa de senha e sem exclusão de usuário.
 6. Prazo de 12 meses da auditoria é proposto, e o texto da política v1.2 está pendente de revisão jurídica.
 7. Campo `area` da candidatura é texto livre no servidor; fora das áreas publicadas, `area_code` sai `null` no feed.

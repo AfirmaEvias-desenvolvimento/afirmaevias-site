@@ -93,8 +93,8 @@ Depende de dado que só a empresa tem:
 
 Configuração de ambiente:
 
-- **`RESEND_API_KEY`** — sem ela os avisos por e-mail ficam desligados e os registros
-  seguem apenas no `/admin`. Veja "Avisos por e-mail" abaixo.
+- **`RESEND_API_KEY`** e **`EMAIL_FROM`** — sem as duas os avisos por e-mail ficam desligados
+  (na fila do banco) e os registros seguem apenas no `/admin`. Veja "Avisos por e-mail" abaixo.
 - **`SESSION_SECRET`** — sem ela o segredo é sorteado a cada boot e o painel desloga
   a cada redeploy.
 - **Backup do banco.** Não há automação no repositório; confirmar a configuração
@@ -109,24 +109,38 @@ Decisão de arquitetura em aberto:
 ## Avisos por e-mail
 
 `src/notificacoes.ts` avisa a equipe quando chega contato, currículo, relato de integridade
-ou requisição LGPD. Usa a API HTTP da Resend via `fetch` nativo — sem dependência nova.
+ou requisição LGPD. O envio sai só por `src/email.ts`, o único módulo que manda e-mail:
+usa o SDK oficial do Resend (pacote `resend`, versão exata no `package.json`) e o remetente
+é sempre o `EMAIL_FROM`. Não há SMTP nem remetente fixo no código.
 
 | Variável | Para que serve | Padrão |
 |---|---|---|
-| `RESEND_API_KEY` | Liga o envio. Ausente, o envio é ignorado com aviso no log. | — |
-| `EMAIL_REMETENTE` | Remetente. Precisa ser de domínio verificado na Resend. | `site@afirmaevias.com.br` |
+| `RESEND_API_KEY` | Chave só de envio do Resend. Liga o envio. | — |
+| `EMAIL_FROM` | Único remetente, de domínio verificado no Resend. No ecossistema: `SAE <sae@afirmaevias.com.br>` | — |
 | `EMAIL_CONTATO` | Destino dos contatos comerciais | `comercial@` |
 | `EMAIL_RH` | Destino dos currículos | `comercial@` |
 | `EMAIL_COMPLIANCE` | Destino dos relatos de integridade | `comercial@` |
 | `EMAIL_ENCARREGADO` | Destino das requisições LGPD | `privacidade@` |
 
-Os avisos não incluem identidade nem conteúdo dos formulários: orientam a leitura
-no painel. Candidaturas incluem a área; relatos incluem protocolo, categoria e
-indicação de anonimato; pedidos LGPD incluem protocolo e tipo. Não há currículo
-anexo. O [mapa de terceiros](docs/arquitetura/05-terceiros-e-sistemas-relacionados.md)
-detalha os campos e o comportamento em caso de falha, sem fila de reenvio.
+Sem `RESEND_API_KEY` ou sem `EMAIL_FROM`, o site sobe normalmente, avisa no log
+("E-mail desligado (falta ...)") e os avisos ficam na fila do banco (`avisos_email_fila`)
+até o envio ser configurado e o serviço reiniciado. Erro devolvido pelo Resend vai para o
+log (`email_falhou`, com nome, status e mensagem, sem a chave) e o aviso volta para a fila
+com recuo até 1 hora (`aviso_email_falhou`).
 
-Se preferirem SMTP próprio no lugar da Resend, o ponto de troca é a função `avisarEquipe`.
+Os avisos não incluem identidade nem conteúdo dos formulários: dizem só que há um
+registro novo do tipo e trazem o link da lista no painel. Não há currículo anexo. O
+[mapa de terceiros](docs/arquitetura/05-terceiros-e-sistemas-relacionados.md) detalha os
+campos e o comportamento em caso de falha.
+
+Teste de envio real (manda 1 e-mail para cada destinatário e imprime o id do Resend ou o erro):
+
+```powershell
+$env:RESEND_API_KEY = '<chave>'; $env:EMAIL_FROM = 'SAE <sae@afirmaevias.com.br>'
+node --import tsx scripts/testar-email.mjs pessoa@afirmaevias.com.br outra@exemplo.com
+```
+
+Sem as variáveis, o script não envia nada e sai com código 3.
 
 ## Descarte automático
 

@@ -141,7 +141,9 @@ node dist/migrate.js --runtime
 | `COMERCIAL_MTLS_CA` | `/tmp/arq/COMERCIAL_MTLS_CA_CONTEUDO` (CA nova da Railway) | caminho; `COMERCIAL_MTLS_CA_CONTEUDO` (Fase 4) |
 | `COMERCIAL_MTLS_CERT` | `/tmp/arq/COMERCIAL_MTLS_CERT_CONTEUDO` (cliente `URI:urn:aevias:service:institucional-api`) | caminho; `COMERCIAL_MTLS_CERT_CONTEUDO` (Fase 4) |
 | `COMERCIAL_MTLS_KEY` | `/tmp/arq/COMERCIAL_MTLS_KEY_CONTEUDO` | caminho; `COMERCIAL_MTLS_KEY_CONTEUDO` (Fase 4) |
-| `RESEND_API_KEY`, `EMAIL_REMETENTE`, `EMAIL_CONTATO`, `EMAIL_RH`, `EMAIL_COMPLIANCE`, `EMAIL_ENCARREGADO` | só se o dono fornecer; sem `RESEND_API_KEY` os avisos ficam na fila do banco e tudo segue no `/admin` | não |
+| `RESEND_API_KEY` | chave só de envio do Resend (segredo; gravada pelo coordenador). Ver "E-mail pelo Resend" abaixo | não |
+| `EMAIL_FROM` | `SAE <sae@afirmaevias.com.br>` (único remetente; sem padrão no código). Sem esta ou sem `RESEND_API_KEY`, os avisos ficam na fila do banco e tudo segue no `/admin` | não |
+| `EMAIL_CONTATO`, `EMAIL_RH`, `EMAIL_COMPLIANCE`, `EMAIL_ENCARREGADO` | opcionais: destinos dos avisos (padrão `comercial@` e, para LGPD, `privacidade@afirmaevias.com.br`) | não |
 | `WALLPAPER_STATS_TOKEN` | Painel Infra: o mesmo valor de todos os sistemas (gravado pelo coordenador); ver "Painel Infra" abaixo | não |
 
 O `site` **pode subir antes da Fase 4**: sem os arquivos `COMERCIAL_MTLS_*`, a conexão 1 fica desligada (um aviso
@@ -199,6 +201,20 @@ O migrate do site lê `DATABASE_URL` (não `MIGRATION_DATABASE_URL`): no `site-m
   login ou requisição autenticada do painel, uma linha por conta e hora, descartada em 7 dias pela rotina de retenção.
 - Sem a variável (ou com menos de 32 caracteres) a rota responde sempre 401. Sem log de acesso e fora do limite por IP.
 
+### E-mail pelo Resend (26/11/2026)
+
+- **Código:** todo e-mail sai por `src/email.ts` (SDK oficial `resend`, versão exata no `package.json`); o remetente é
+  sempre o `EMAIL_FROM`. Hoje o único uso são os avisos à equipe (`src/notificacoes.ts`, fila `avisos_email_fila`).
+  Não há SMTP. A variável antiga `EMAIL_REMETENTE` deixou de ser lida: apague-a do serviço se existir.
+- **Serviço que lê:** só o `site` (no projeto: `institucional`). O `site-migrate` não envia e-mail e não precisa delas.
+- **Ordem:** gravar `RESEND_API_KEY` e `EMAIL_FROM` e redeployar o `site`/`institucional`. Não há migração nova (o schema
+  não mudou), então o `site-migrate` não precisa rodar por causa disto. A fila só liga na subida: sem as duas variáveis o
+  log mostra "E-mail desligado (falta ...)" e os avisos esperam no banco; depois de gravá-las, um redeploy os envia.
+- **Falha:** o erro do Resend vai para o log como `email_falhou` (nome, status e mensagem, sem a chave) e o aviso volta
+  à fila com recuo até 1 h (`aviso_email_falhou`). O link do aviso usa o `SITE_URL` (pendência 3).
+- **Teste de envio** (local, com as variáveis no processo): `node --import tsx scripts/testar-email.mjs <destinatário>...`
+  imprime o id de cada mensagem ou o erro do Resend.
+
 ## Conexões do Site
 
 | Direção | Destino / origem | Protocolo | Variáveis | Estado na Railway |
@@ -206,10 +222,10 @@ O migrate do site lê `DATABASE_URL` (não `MIGRATION_DATABASE_URL`): no `site-m
 | Site → Comercial (conexão 1) | `comercial.railway.internal:9555`, `POST/GET/DELETE /api/integracao/v1/comercial/leads` | HTTPS mTLS, cliente `institucional-api`; o Comercial confere no AUTH `comercial.lead.create/read/delete` | `COMERCIAL_API_URL`, `COMERCIAL_MTLS_*` | pronto no código; depende da Fase 4 (certificado `institucional-api` não existe na PKI) |
 | Site → AUTH | `auth.railway.internal:9446`, `POST /v1/service-authorize-peer` | HTTPS mTLS, cliente `institucional-api` | `INTEGRACAO_AUTH_URL` | só com o feed ligado |
 | RH (`rh-collector`) → Site | `site.railway.internal:9557` (`/internal/capabilities`, `/api/integracao/v1/changes`, `snapshots`, `reconciliation`) | HTTPS mTLS; só a identidade `rh-collector` passa, e o AUTH confirma `feed.read`/`capabilities.read` no app `institucional` | `INTEGRACAO_*` | desligado (o RH não tem a fonte) |
-| Site → Resend | `api.resend.com` | HTTPS (API key) | `RESEND_API_KEY`, `EMAIL_*` | desligado sem a chave |
+| Site → Resend | `api.resend.com` (SDK oficial, `src/email.ts`) | HTTPS (API key só de envio) | `RESEND_API_KEY`, `EMAIL_FROM`; destinos `EMAIL_CONTATO`/`EMAIL_RH`/`EMAIL_COMPLIANCE`/`EMAIL_ENCARREGADO` | desligado sem a chave ou sem `EMAIL_FROM` |
 | Site → Comercial (link) | domínio público do `comercial` | só link no navegador | `PORTAL_CLIENTE_URL` | ligado |
 
-Não há SMTP, NPS, S&L, Projetos, Laboratório nem Controle. O Site não chama o RH (o RH é que puxa o feed). Login do
+E-mail só pela API do Resend. Não há NPS, S&L, Projetos, Laboratório nem Controle. O Site não chama o RH (o RH é que puxa o feed). Login do
 `/admin` é próprio (não passa pelo AUTH).
 
 ## O que o AUTH precisa emitir e registrar (Fase 4; o `aevias-auth` não foi alterado)
@@ -267,7 +283,8 @@ node dist/admin-inicial.js --email <e-mail da pessoa> --nome "<nome>" --designac
 4. **`PORTAL_CLIENTE_URL`:** sem a variável o botão "Área do cliente" aponta para o Comercial de PRODUÇÃO antigo
    (`aevias-comercial-production.up.railway.app`). A tabela usa o `comercial` deste projeto; confirmar.
 5. **Feed do RH:** ligar ou não a fonte `institucional` no RH da Railway (hoje fora).
-6. **Avisos por e-mail:** `RESEND_API_KEY` e remetente verificado, só se o dono fornecer.
+6. **Avisos por e-mail:** `RESEND_API_KEY` e `EMAIL_FROM` no `site`/`institucional` (domínio `afirmaevias.com.br`
+   verificado no Resend em 26/11/2026); confirmar que as caixas de destino existem e são as certas.
 7. **Projeto Railway antigo (`noble-surprise`):** continua apontando para este repositório com o `railway.json` da raiz.
    Decidir se ele segue ativo; esta fase não o tocou.
 8. `PUBLIC_HTTP=1` confia em `TRUST_PROXY_HOPS` saltos (padrão 2): pela borda pública o IP é o real (o penúltimo item
@@ -286,3 +303,4 @@ node dist/admin-inicial.js --email <e-mail da pessoa> --nome "<nome>" --designac
 
 - Fase 0: `2058ae7`
 - IP do cliente atrás da borda (`TRUST_PROXY_HOPS`, padrão 2): ver o `git log` de `src/railway.ts`.
+- E-mail pelo Resend (SDK, `EMAIL_FROM`): ver o `git log` de `src/email.ts`.

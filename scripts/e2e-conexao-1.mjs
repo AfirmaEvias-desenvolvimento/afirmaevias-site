@@ -112,7 +112,7 @@ const hsVivo = async () => { ultimoHs = await cru('institucional', 'GET', `${HS}
 function subirSite(porta, dbUrl, extra = {}) {
   return subirFilho(`site:${porta}`, process.execPath, ['dist/server.js'], {
     PORT: String(porta), DATABASE_URL: dbUrl, NODE_ENV: 'development', SESSION_SECRET: 's'.repeat(40),
-    RESEND_API_KEY: '',
+    RESEND_API_KEY: '', EMAIL_FROM: '',
     COMERCIAL_API_URL: '', COMERCIAL_MTLS_CA: '', COMERCIAL_MTLS_CERT: '', COMERCIAL_MTLS_KEY: '', PORTAL_CLIENTE_URL: undefined, ...extra,
   });
 }

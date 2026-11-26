@@ -35,8 +35,8 @@ existência do arquivo `.env` não o carrega: não há `dotenv` na aplicação.
 | `SESSION_SECRET` | Assinatura do cookie; deve permanecer estável entre processos e deploys |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Criação inicial pela migration se ambos existirem e o e-mail não estiver cadastrado |
 | `ADMIN_NOME` | Nome inicial, padrão `Administrador` |
-| `RESEND_API_KEY` | Habilita os avisos; sem valor, o envio fica desligado |
-| `EMAIL_REMETENTE` | Padrão `site@afirmaevias.com.br`; requer configuração correspondente no provedor |
+| `RESEND_API_KEY` | Chave só de envio do Resend (segredo). Com `EMAIL_FROM`, liga os avisos; sem uma das duas o envio fica desligado e os avisos ficam na fila do banco |
+| `EMAIL_FROM` | Único remetente de todo e-mail (`src/email.ts`), sem padrão no código; domínio verificado no Resend. No ecossistema: `SAE <sae@afirmaevias.com.br>` |
 | `EMAIL_CONTATO`, `EMAIL_RH`, `EMAIL_COMPLIANCE` | Destinos, padrão `comercial@afirmaevias.com.br` |
 | `EMAIL_ENCARREGADO` | Destino dos avisos de titular, padrão `privacidade@afirmaevias.com.br` |
 | `WALLPAPER_STATS_TOKEN` | Bearer de `GET /api/wallpaper/usuarios` (Painel Infra), o mesmo valor em todos os sistemas; ausente ou com menos de 32 caracteres, a rota responde sempre 401 |
@@ -94,7 +94,7 @@ documentos, existência das caixas ou sucesso da retenção.
 | Processo acusa `DATABASE_URL` ausente | Verificar injeção das variáveis ou uso de `--env-file` |
 | Migration não inicia | Verificar conexão, permissões e disponibilidade do schema |
 | Painel desloga após reinício | Conferir estabilidade de `SESSION_SECRET` e expiração de 12 horas |
-| Formulário aparece no painel, mas não chega e-mail | Conferir chave, remetente, destino e logs de `avisarEquipe` |
+| Formulário aparece no painel, mas não chega e-mail | Conferir `RESEND_API_KEY`, `EMAIL_FROM` e destino; no log, "E-mail desligado" ao subir, `email_falhou` (erro do Resend) e `aviso_email_falhou` (retentativa); testar com `node --import tsx scripts/testar-email.mjs <destinatário>` |
 | `/health` falha | Conferir aplicação e conexão com PostgreSQL |
 | CSS parece antigo | Conferir novo deploy, uso do helper `asset` e URL versionada |
 | Dados antigos continuam no banco | Conferir logs de retenção, data `criado_em` e regras aplicáveis |

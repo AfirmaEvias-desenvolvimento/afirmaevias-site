@@ -74,7 +74,7 @@ Revogação não desfaz transação que já confirmou antes do bloqueio. Testes 
 - DB-05: comparação de assinatura/trilha antes/depois sem novas divergências; diferenças históricas enumeradas separadamente. Não aceitar recalcular a cadeia como correção.
 - DB-06: migração não faz seed, não trunca e não altera `public` do Ponto para criar o novo RH. Origem permanece disponível para conferência.
 - DB-07: restore de backup anterior ao desligamento seguido de ledger/replay mantém usuário bloqueado; replay não ressuscita conteúdo eliminado.
-- DB-08: restore isolado sem SMTP real/integração externa; medir RPO/RTO, checksums dos arquivos e descriptografia controlada.
+- DB-08: restore isolado sem envio real de e-mail (Resend)/integração externa; medir RPO/RTO, checksums dos arquivos e descriptografia controlada.
 
 ## T05. Coleta, consistência e produtividade futura
 

@@ -56,7 +56,8 @@ afirmaevias-site/
 │   ├── auth.ts               Contas, senhas, sessões e freio de login
 │   ├── audit.ts              Gravação dos eventos administrativos
 │   ├── db.ts / migrate.ts    Pool PostgreSQL e aplicação do schema
-│   ├── notificacoes.ts       Avisos pela Resend
+│   ├── email.ts              Único envio de e-mail (SDK do Resend, remetente EMAIL_FROM)
+│   ├── notificacoes.ts       Fila de avisos à equipe (envia por email.ts)
 │   ├── retencao.ts           Execução do descarte
 │   ├── regras-retencao.ts    SQL e prazos do descarte
 │   └── *.test.ts             Testes com node:test

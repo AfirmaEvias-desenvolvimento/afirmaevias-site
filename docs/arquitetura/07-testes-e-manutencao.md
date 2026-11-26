@@ -18,6 +18,8 @@ Os testes atuais não precisam de banco, chaves da Resend ou serviços externos.
 | `src/utils.test.ts` | Normalização de entrada, validação, CSV, anexos, assinatura de arquivo, protocolos, hash e títulos |
 | `src/retencao.test.ts` | Estrutura das regras SQL, recorte por data e correspondência de prazos com conteúdo publicado |
 | `src/terceiros.test.ts` | Recursos externos nas views/CSS/JS, ausência de analytics conhecidos e CSP base |
+| `src/email.test.ts` | Módulo único de e-mail com o SDK real do Resend contra uma API falsa em `127.0.0.1`: sem `RESEND_API_KEY`/`EMAIL_FROM` nada sai, remetente só `EMAIL_FROM`, `Idempotency-Key`, anexo, erro `{ data, error }` e tempo esgotado sem a chave no log, e nenhum outro arquivo de `src/` envia e-mail ou define remetente |
+| `src/notificacoes.test.ts` | Fila de avisos com Postgres embutido (pula sem `HS_DIR`): gravação na transação do formulário, espera sem configuração, retentativa com a mesma chave de idempotência e aviso sem dados pessoais |
 | `src/wallpaper.test.ts` | Painel Infra: 401, formato (24 horas cheias em UTC, zeros, nada pessoal), cache de 60 s, sem log, fora do rate limit e deduplicação do registro |
 | `src/wallpaper-banco.test.ts` | Painel Infra com Postgres embutido (pula sem `HS_DIR`): privilégios do `site_app`, regras de contagem, `ON CONFLICT`, descarte de 7 dias, cascata, gancho da sessão e tempo da consulta |
 
@@ -33,9 +35,11 @@ e `npm ci`. Executa os testes, o build, a compilação dos templates EJS e a che
 de sintaxe dos scripts em `public/js/`.
 
 O workflow não executa testes de navegação, migration real, login completo,
-upload/download pela rede ou entrega de e-mail. Também não declara o deploy;
-seu bloqueio por sucesso da CI depende da configuração externa de branch e
-hospedagem.
+upload/download pela rede ou entrega de e-mail. O envio real é conferido à mão com
+`node --import tsx scripts/testar-email.mjs <destinatário>...` (lê `RESEND_API_KEY` e
+`EMAIL_FROM` do ambiente e imprime o id do Resend ou o erro, sem a chave). O workflow
+também não declara o deploy; seu bloqueio por sucesso da CI depende da configuração
+externa de branch e hospedagem.
 
 ## Validação funcional ao alterar fluxos
 
