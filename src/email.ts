@@ -31,7 +31,8 @@ export type OpcoesEnvio = {
 export type EnviarEmail = (mensagem: Mensagem, opcoes?: OpcoesEnvio) => Promise<ResultadoEmail>;
 
 const TEMPO_LIMITE_PADRAO = 8000;
-const ler = (env: NodeJS.ProcessEnv, nome: string) => (env[nome] ?? '').trim();
+// Um par de aspas em volta do valor inteiro (EMAIL_FROM="SAE <...>" gravado com as aspas) não faz parte do valor.
+const ler = (env: NodeJS.ProcessEnv, nome: string) => (env[nome] ?? '').trim().replace(/^(["'])(.*)\1$/, '$2').trim();
 
 /** Diz se o envio está ligado e, se não, quais variáveis faltam (só nomes; nunca devolve a chave). */
 export function configuracaoEmail(env: NodeJS.ProcessEnv = process.env): { configurado: boolean; faltando: string[] } {

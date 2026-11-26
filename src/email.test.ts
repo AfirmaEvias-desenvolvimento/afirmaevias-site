@@ -101,6 +101,17 @@ test('envia pelo SDK: remetente só EMAIL_FROM, chave no Authorization, Idempote
   } finally { await api.fechar(); }
 });
 
+test('aspas em volta do valor (EMAIL_FROM="SAE <...>" gravado com as aspas) não entram no remetente nem na chave', async () => {
+  const api = await apiFalsa((_p, res) => json(res, 200, { id: 'msg_aspas' }));
+  try {
+    assert.deepEqual(configuracaoEmail({ RESEND_API_KEY: '""', EMAIL_FROM: "''" }), { configurado: false, faltando: ['RESEND_API_KEY', 'EMAIL_FROM'] });
+    process.env.RESEND_API_KEY = `"${CHAVE}"`; process.env.EMAIL_FROM = `"${REMETENTE}"`;
+    assert.deepEqual(await enviarEmail({ para: 'a@exemplo.test', assunto: 'x', texto: 'x' }, { baseUrl: api.baseUrl }), { ok: true, id: 'msg_aspas' });
+    assert.equal(api.pedidos[0].corpo.from, REMETENTE);
+    assert.equal(api.pedidos[0].cabecalhos.authorization, `Bearer ${CHAVE}`);
+  } finally { await api.fechar(); }
+});
+
 test('erro devolvido pelo Resend ({ data, error }) vira resultado e log, sem a chave nem o Authorization', async () => {
   const api = await apiFalsa((_p, res) => json(res, 422, {
     statusCode: 422, name: 'validation_error', message: `Invalid from field (${CHAVE}). Authorization: Bearer ${CHAVE}`
