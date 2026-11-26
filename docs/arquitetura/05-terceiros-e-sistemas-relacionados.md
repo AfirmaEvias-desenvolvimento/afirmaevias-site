@@ -36,7 +36,7 @@ flowchart TB
 | Cloudflare | DNS orientado pelo README | Resolução do domínio; dados de tráfego HTTP somente se proxy estiver habilitado | Não há API/SDK Cloudflare no site; modo DNS/proxy a confirmar |
 | GitHub / GitHub Actions | Repositório e verificações de push/PR para `main` | Código e saídas da CI; workflow não configura acesso ao banco de produção | `.github/workflows/ci.yml`; vínculo de deploy na Railway a confirmar |
 | npm registry | Instalação das dependências do build e CI | Solicitações de pacotes e metadados técnicos de instalação | `package.json`, `package-lock.json`, `npm ci` |
-| Google / YouTube | Script e iframe na página `/bruno_magalhaes` | Requisições do navegador, IP e metadados técnicos; conteúdo conforme comportamento do provedor | `public/js/extra.js`, CSP em `src/server.ts` |
+| Google / YouTube | Script e iframe na página `/bruno_magalhaes` | Requisições do navegador, IP e metadados técnicos; conteúdo conforme comportamento do provedor | `public/js/extra.js`, CSP em `src/cabecalhos.ts` |
 | Canal externo de denúncias | Link aberto por decisão do visitante | Navegação ao destino e dados preenchidos lá; o site não envia seu formulário direto a esse canal | `integridade.canal.url` em `src/content.ts`; hostname `denuncieonline.azurewebsites.net` |
 | WhatsApp / Meta | Links `wa.me` para atendimento | Navegação e conversa iniciada pelo visitante | Views e `empresa.whatsapp`; sem API de mensagens no servidor |
 | Google Maps | Link de busca dos endereços físicos | URL de busca e navegação do visitante | `empresa.enderecos[].mapsUrl`; sem mapa incorporado |

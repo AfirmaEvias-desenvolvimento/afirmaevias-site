@@ -35,6 +35,8 @@ redes sociais e a relação do site com Ponto, Controle, Laboratório e `aevias-
 
 Mais `/protocolo/:codigo` (consulta pública), `/robots.txt`, `/sitemap.xml`, `/health`,
 a página extra `/bruno_magalhaes` (não indexável, com YouTube), 404 e página de erro.
+`/email/logo-afirma-evias.png` (arquivo de `public/email/`) é o logotipo que os e-mails do AUTH e do
+Comercial carregam deste site: público, cache longo e liberado para outra origem. Não renomear nem apagar.
 
 **Painel**
 

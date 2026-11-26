@@ -67,7 +67,11 @@ test('nenhum script de analytics ou pixel conhecido aparece no código', () => {
 });
 
 test('a CSP só abre domínio externo na rota da página extra', () => {
-  const server = fs.readFileSync(path.join(raiz, 'src', 'server.ts'), 'utf8');
-  const base = server.slice(server.indexOf('const base ='), server.indexOf('const comVideo'));
+  // a CSP saiu do server.ts para src/cabecalhos.ts (cabecalhosDeSeguranca)
+  const fonte = fs.readFileSync(path.join(raiz, 'src', 'cabecalhos.ts'), 'utf8');
+  const inicio = fonte.indexOf('const base =');
+  const fim = fonte.indexOf('const comVideo');
+  assert.ok(inicio >= 0 && fim > inicio, 'a política base da CSP não foi encontrada em src/cabecalhos.ts');
+  const base = fonte.slice(inicio, fim);
   assert.ok(!/https?:\/\//.test(base), 'a política base da CSP não pode citar domínio externo');
 });

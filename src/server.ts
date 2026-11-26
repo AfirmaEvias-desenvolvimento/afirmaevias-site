@@ -5,7 +5,6 @@ import cookie from '@fastify/cookie';
 import formbody from '@fastify/formbody';
 import multipart from '@fastify/multipart';
 import compress from '@fastify/compress';
-import estatico from '@fastify/static';
 import view from '@fastify/view';
 import rateLimit from '@fastify/rate-limit';
 import ejs from 'ejs';
@@ -26,6 +25,8 @@ import { rotasSite } from './routes/site.js';
 import { rotasFormularios } from './routes/forms.js';
 import { rotasAdmin } from './routes/admin.js';
 import { naoEncontrado } from './nao-encontrado.js';
+import { registrarEstaticos } from './estaticos.js';
+import { cabecalhosDeSeguranca } from './cabecalhos.js';
 
 const aqui = path.dirname(fileURLToPath(import.meta.url));
 
@@ -69,11 +70,8 @@ await app.register(rateLimit, {
   }
 });
 
-await app.register(estatico, {
-  root: path.resolve(aqui, '../public'),
-  prefix: '/',
-  maxAge: producao ? '365d' : 0
-});
+// public/ sem sessão (365 dias de cache em produção), inclusive public/email/logo-afirma-evias.png dos e-mails dos sistemas
+await registrarEstaticos(app, producao);
 
 await app.register(view, {
   engine: { ejs },
@@ -92,36 +90,8 @@ await app.register(view, {
   }
 });
 
-app.addHook('onSend', async (req, reply, payload) => {
-  reply.header('X-Content-Type-Options', 'nosniff');
-  reply.header('X-Frame-Options', 'SAMEORIGIN');
-  reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
-  reply.header('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
-  // isolamento entre origens: impede que outra pagina abra esta em popup e
-  // mantenha referencia ao window, e que terceiros embutam nossos recursos
-  reply.header('Cross-Origin-Opener-Policy', 'same-origin');
-  reply.header('Cross-Origin-Resource-Policy', 'same-origin');
-  // O site nao usa CDN, fonte externa nem analytics: da para fechar tudo.
-  // Nenhum atributo style sobrou nos templates, entao style-src pode ficar em
-  // 'self' puro: sem 'unsafe-inline' o navegador recusa qualquer estilo que um
-  // XSS tentasse injetar. Uma rota abre excecao para o player de video e recebe
-  // politica propria, em vez de afrouxar o cabecalho de todas as paginas.
-  const base =
-    "default-src 'self'; style-src 'self'; " +
-    "font-src 'self'; connect-src 'self'; form-action 'self'; " +
-    "frame-ancestors 'self'; base-uri 'self'; object-src 'none'";
-  const comVideo = req.url.startsWith('/bruno_magalhaes');
-  reply.header(
-    'Content-Security-Policy',
-    comVideo
-      ? `${base}; script-src 'self' https://www.youtube.com https://s.ytimg.com; ` +
-        "img-src 'self' data: https://i.ytimg.com; " +
-        'frame-src https://www.youtube.com https://www.youtube-nocookie.com'
-      : `${base}; img-src 'self' data:; script-src 'self'`
-  );
-  if (producao) reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  return payload;
-});
+// nosniff, X-Frame-Options, COOP/CORP, CSP e HSTS (src/cabecalhos.ts); só as imagens de /email/ saem com CORP cross-origin
+cabecalhosDeSeguranca(app, producao);
 
 // /health/live (processo de pé, healthcheck da Railway) e /health (confere o banco, como sempre)
 rotasSaude(app, () => pool.query('SELECT 1'));

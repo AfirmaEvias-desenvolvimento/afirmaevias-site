@@ -1,7 +1,7 @@
 # 02 — Backend, telas e fluxos
 
 > Fontes: `src/routes/site.ts`, `src/routes/forms.ts`, `src/routes/admin.ts`
-> e `src/server.ts`.
+> `src/server.ts` e `src/estaticos.ts`.
 
 ## Rotas públicas
 
@@ -23,6 +23,7 @@
 | `GET /protocolo/:codigo` | Consulta limitada do andamento de um protocolo |
 | `GET /robots.txt` e `GET /sitemap.xml` | Orientação de rastreamento e mapa público |
 | `GET /health` | Executa `SELECT 1` e responde `{ ok: true }` |
+| `GET /email/logo-afirma-evias.png` | Logotipo horizontal (440 px, fundo transparente) que os e-mails do AUTH e do Comercial mostram. Estático de `public/email/`, sem sessão, `image/png`, cache de 365 dias em produção e CORP `cross-origin` (`src/cabecalhos.ts`). Não remover nem renomear: e-mails já enviados apontam para ele |
 | `POST /contato` | Grava contato comercial |
 | `POST /trabalhe-com-a-gente` | Grava candidatura e currículo |
 | `POST /programa-de-integridade` | Grava relato direto e gera protocolo `INT` |

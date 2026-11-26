@@ -48,7 +48,9 @@ provedores depende da configuração operacional, que não está no código.
 ```text
 afirmaevias-site/
 ├── src/
-│   ├── server.ts             Inicialização, plugins, cabeçalhos e tarefas
+│   ├── server.ts             Inicialização, plugins e tarefas
+│   ├── cabecalhos.ts         Cabeçalhos de segurança e CSP (CORP cross-origin só em /email/)
+│   ├── estaticos.ts          public/ servido sem sessão, com cache longo em produção
 │   ├── config.ts             Ambiente e parâmetros comuns
 │   ├── content.ts            Conteúdo institucional e links
 │   ├── routes/               Site, formulários e painel
@@ -62,7 +64,7 @@ afirmaevias-site/
 │   ├── regras-retencao.ts    SQL e prazos do descarte
 │   └── *.test.ts             Testes com node:test
 ├── db/schema.sql             Estrutura idempotente do banco
-├── public/                   CSS, JavaScript, fontes, imagens e PDFs
+├── public/                   CSS, JavaScript, fontes, imagens, PDFs e email/ (logo dos e-mails)
 ├── docs/arquitetura/          Esta documentação
 ├── .github/workflows/        Verificações de CI
 └── railway.json              Build, inicialização e healthcheck

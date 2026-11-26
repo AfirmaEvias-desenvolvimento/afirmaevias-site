@@ -46,7 +46,9 @@ AUTH (login único) para o `/admin`**: o painel tem usuários e sessões própri
 Estrutura relevante:
 
 ```
-src/server.ts                 app Fastify, cabeçalhos de segurança, CSP, timers (retenção, sessões), encerramento limpo
+src/server.ts                 app Fastify, plugins, timers (retenção, sessões), encerramento limpo
+src/cabecalhos.ts             cabeçalhos de segurança e CSP; CORP cross-origin só nas imagens de /email/
+src/estaticos.ts              public/ sem sessão (365 d de cache em produção), inclusive /email/logo-afirma-evias.png
 src/config.ts                 variáveis de ambiente e versão do aviso de privacidade (versaoPolitica)
 src/content.ts                todo o texto do site, áreas de vaga, política de privacidade
 src/routes/{site,forms,admin}.ts   páginas públicas, formulários, painel
@@ -186,7 +188,8 @@ verificado** se existe outro caminho além de SQL direto). A conta temporária d
 Rotas públicas (`src/routes/site.ts`): `/`, `/afirma-evias`, `/servicos`, `/aplicativo`, `/acreditacao-e-certificacao`,
 `/programa-de-integridade`, `/trabalhe-com-a-gente`, `/contato`, `/politica-de-privacidade`, `/termos-de-uso`,
 `/portal-do-titular`, `/acessibilidade`, `/bruno_magalhaes` (não indexável), `/robots.txt` (bloqueia `/admin`),
-`/sitemap.xml` (12 rotas), `/health` (executa `SELECT 1`), 404 e página de erro. Há ainda `/protocolo/:codigo`.
+`/sitemap.xml` (12 rotas), `/health` (executa `SELECT 1`), 404 e página de erro. Há ainda `/protocolo/:codigo` e
+`/email/logo-afirma-evias.png` (estático de `public/email/`, o logotipo dos e-mails do AUTH e do Comercial; não renomear).
 
 Painel (`/admin`): `login`, visão geral (métricas, últimos contatos e LGPD, série de 14 dias), `/dados/<coleção>` com
 busca, filtro de status e paginação de 25 (coleções `contatos`, `candidaturas`, `relatos`, `lgpd`, `consentimentos`, todas

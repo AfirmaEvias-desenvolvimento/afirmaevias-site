@@ -27,7 +27,8 @@ CSS e JavaScript do navegador são servidos de `public/`.
 ## Organização e responsabilidade
 
 `src/server.ts` registra plugins, define contexto comum das views, aplica
-cabeçalhos, registra as três famílias de rotas e inicia as tarefas de manutenção.
+cabeçalhos (`src/cabecalhos.ts`), serve `public/` (`src/estaticos.ts`), registra
+as três famílias de rotas e inicia as tarefas de manutenção.
 `src/config.ts` centraliza parâmetros; `src/db.ts` expõe consultas com pool.
 
 `src/routes/site.ts` monta páginas institucionais; `forms.ts` valida e grava os
@@ -53,6 +54,9 @@ As fontes Poppins, imagens e PDFs institucionais são locais. `src/assets.ts`
 acrescenta uma versão derivada do conteúdo às URLs usadas pelas views; o cache
 de estáticos é de 365 dias em produção e zero no desenvolvimento. Mudanças em
 arquivos exigem novo deploy para renovar o cache de versões do processo.
+`public/email/logo-afirma-evias.png` é usado pelos e-mails de outros sistemas
+(AUTH e Comercial), não pelas views: para trocar o logotipo, mantenha o nome e
+peça aos sistemas que acrescentem `?v=<n>` à URL.
 
 `src/seo.ts` monta JSON-LD localmente. Uma URL de vocabulário como `schema.org`
 no JSON-LD não é uma chamada de API nem um recurso remoto carregado pelo site.

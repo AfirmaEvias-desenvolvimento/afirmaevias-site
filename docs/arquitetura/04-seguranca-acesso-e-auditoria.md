@@ -1,7 +1,7 @@
 # 04 — Segurança, acesso e auditoria
 
 > Fontes: `src/auth.ts`, `src/audit.ts`, `src/routes/admin.ts`,
-> `src/server.ts`, `src/utils.ts` e `db/schema.sql`.
+> `src/server.ts`, `src/cabecalhos.ts`, `src/utils.ts` e `db/schema.sql`.
 
 ## Autenticação do painel
 
@@ -77,10 +77,18 @@ um limite global. O limite do corpo HTTP é o tamanho máximo do upload mais 512
 ## Cabeçalhos e origem
 
 O servidor define CSP, `nosniff`, `X-Frame-Options: SAMEORIGIN`, política de
-referência, isolamento de origens e bloqueio de câmera, microfone e geolocalização.
+referência, isolamento de origens e bloqueio de câmera, microfone e geolocalização
+(`cabecalhosDeSeguranca` em `src/cabecalhos.ts`, ligado pelo `src/server.ts`).
 A CSP base restringe recursos, formulários e conexões à própria origem. A rota
 extra recebe exceções para o player do YouTube; detalhes no
 [mapa de terceiros](05-terceiros-e-sistemas-relacionados.md).
+
+`Cross-Origin-Resource-Policy` é `same-origin` em tudo, menos nas imagens de
+`/email/` (`public/email/`, hoje só `logo-afirma-evias.png`), que saem com
+`cross-origin`: os e-mails do AUTH e do Comercial as mostram por `<img>`, e o
+webmail aberto no navegador as carrega de outra origem. A exceção vale só para
+resposta `image/*` nesse prefixo; a 404 de `/email/` e o resto do site seguem
+`same-origin`, e a CSP não muda (`src/estaticos.test.ts`).
 
 Em produção há HSTS de um ano com subdomínios. A aplicação usa `trustProxy: true`:
 o IP registrado depende da cadeia de proxies e dos cabeçalhos encaminhados.
