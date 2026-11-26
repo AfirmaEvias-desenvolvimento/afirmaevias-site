@@ -25,7 +25,7 @@ O cookie é assinado com `SESSION_SECRET`, `HttpOnly`, `SameSite=Lax`, caminho `
 e `Secure` em produção. A assinatura não cifra o conteúdo do cookie.
 
 Senhas usam bcrypt com custo 12. Criação pelo painel e troca de senha exigem
-pelo menos dez caracteres; a criação inicial pela migration não passa por essa
+pelo menos oito caracteres; a criação inicial pela migration não passa por essa
 validação do painel. A troca exige senha atual, confirma a nova e remove todas
 as sessões da conta. Desativar a conta impede seu uso na próxima requisição.
 

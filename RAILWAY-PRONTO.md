@@ -263,7 +263,7 @@ Na Railway não existe `ADMIN_PASSWORD` (senha de pessoa em variável é proibid
 ```sh
 railway ssh --service site
 node dist/admin-inicial.js --email <e-mail da pessoa> --nome "<nome>" --designacao "<quem designou, quando, por qual meio>"
-# a senha inicial é pedida no terminal, sem eco; mínimo de 10 caracteres
+# a senha inicial é pedida no terminal, sem eco; mínimo de 8 caracteres
 ```
 
 - Roda com o `DATABASE_URL` do runtime (`site_app`). A senha nunca vai em argumento, variável ou log.

@@ -622,7 +622,7 @@ export async function rotasAdmin(app: FastifyInstance) {
 
     let erro: string | null = null;
     if (!(await autenticar(request.usuario!.email, atual))) erro = 'A senha atual não confere.';
-    else if (nova.length < 10) erro = 'A nova senha precisa de pelo menos 10 caracteres.';
+    else if (nova.length < 8) erro = 'A nova senha precisa de pelo menos 8 caracteres.';
     else if (nova !== repetida) erro = 'A confirmação não bate com a nova senha.';
     else if (nova === atual) erro = 'A nova senha precisa ser diferente da atual.';
 
@@ -665,7 +665,7 @@ export async function rotasAdmin(app: FastifyInstance) {
     let erro: string | null = null;
     if (!nome) erro = 'Escreva o nome.';
     else if (!emailValido(email)) erro = 'Confira o e-mail.';
-    else if (senha.length < 10) erro = 'A senha precisa de pelo menos 10 caracteres.';
+    else if (senha.length < 8) erro = 'A senha precisa de pelo menos 8 caracteres.';
 
     if (erro) {
       return reply.code(400).view('admin/usuarios', {

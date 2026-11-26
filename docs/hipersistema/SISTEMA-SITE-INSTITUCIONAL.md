@@ -164,7 +164,7 @@ exige alterar `regras-retencao.ts`, o texto da política e o teste.
   digitado (janela expira sozinha, sem bloqueio permanente). A mensagem de erro é igual em todos os casos.
 - **Primeiro admin**: criado pela migration se `ADMIN_EMAIL` e `ADMIN_PASSWORD` existirem e o e-mail não estiver cadastrado.
   Alterar a variável depois não muda a senha.
-- **Senhas**: mínimo de 10 caracteres; a troca da própria senha (`POST /admin/minha-senha`) exige a senha atual e derruba as
+- **Senhas**: mínimo de 8 caracteres; a troca da própria senha (`POST /admin/minha-senha`) exige a senha atual e derruba as
   sessões do usuário.
 
 Permissões (conferidas em `src/routes/admin.ts`). Só há dois papéis, `admin` e `editor`:

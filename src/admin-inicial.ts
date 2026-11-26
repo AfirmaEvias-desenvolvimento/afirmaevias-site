@@ -39,7 +39,7 @@ export function lerPedido(argv: readonly string[]): PedidoAdmin {
 
 /** Mesma regra do painel (/admin/usuarios). */
 export function conferirSenha(senha: string) {
-  if (senha.length < 10) throw new Error('A senha precisa de pelo menos 10 caracteres.');
+  if (senha.length < 8) throw new Error('A senha precisa de pelo menos 8 caracteres.');
   return senha;
 }
 

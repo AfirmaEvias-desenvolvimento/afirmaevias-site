@@ -165,8 +165,8 @@ test('admin-inicial: argumentos conferidos, senha nunca por argumento', () => {
   assert.throws(() => lerPedido(['--email', 'x', '--nome', 'P', '--designacao', 'designação válida']), /--email/);
   assert.throws(() => lerPedido(['--senha', 'segredo123456']), /opção desconhecida/);
   assert.throws(() => lerPedido(['--email']), /sem valor/);
-  assert.throws(() => conferirSenha('curta'), /10 caracteres/);
-  assert.equal(conferirSenha('0123456789'), '0123456789');
+  assert.throws(() => conferirSenha('curta12'), /8 caracteres/);
+  assert.equal(conferirSenha('01234567'), '01234567');
 });
 
 const EMBRULHO = (comando: string) =>
