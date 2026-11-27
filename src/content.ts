@@ -129,7 +129,7 @@ export const sobre = {
     },
     {
       ano: '2016',
-      titulo: 'Nasce a Evias',
+      titulo: 'Nasce a E-vias',
       texto:
         'Criada em Curitiba/PR, conquistou reconhecimento pela excelência nos ensaios laboratoriais e no controle de qualidade de materiais, com destaque para sua estrutura moderna e laboratórios móveis. Especializou-se em pavimentação asfáltica e tecnologia aplicada à engenharia viária.'
     },

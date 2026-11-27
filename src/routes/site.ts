@@ -22,7 +22,7 @@ export async function rotasSite(app: FastifyInstance) {
     reply.view('pages/sobre', {
       titulo: 'A empresa | Afirma Evias',
       descricao:
-        'A história da Afirma Evias: a união da Afirma Engenharia (2002) com a Evias (2016), consolidada na fusão de 2024.',
+        'A história da Afirma Evias: a união da Afirma Engenharia (2002) com a E-vias (2016), consolidada na fusão de 2024.',
       rotaAtual: '/afirma-evias',
       sobre: conteudo.sobre,
       indicadores: conteudo.indicadores
