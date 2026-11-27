@@ -49,7 +49,7 @@ export const config = {
   },
   // Versão do aviso de privacidade aceito (AAAA-MM-DD, = data de content.ts privacidade.atualizadoEm). Vai como
   // privacy_version no lead do Comercial e na prova de consentimento de cookies.
-  versaoPolitica: '2026-11-06',
+  versaoPolitica: '2026-11-27',
   uploadMaximoBytes: 5 * 1024 * 1024
 };
 

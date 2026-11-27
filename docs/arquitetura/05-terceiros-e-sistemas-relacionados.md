@@ -87,7 +87,7 @@ O nome `nocookie` não significa ausência de comunicação com o Google. `noind
 também não impede acesso à página nem carregamento de recursos. As demais
 páginas usam recursos locais; os testes de terceiros mantêm a exceção explícita.
 
-## Relação com os outros sistemas Afirma E-vias
+## Relação com os outros sistemas Afirma Evias
 
 | Sistema | Relação implementada neste site | Limite |
 |---|---|---|

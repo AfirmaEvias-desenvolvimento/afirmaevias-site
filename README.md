@@ -1,4 +1,4 @@
-# Site Afirma E-vias
+# Site Afirma Evias
 
 Site institucional refeito do zero. Node 22 + Fastify 5 + TypeScript + EJS + PostgreSQL.
 Sem WordPress, sem build de frontend, sem CMS: o conteúdo mora em `src/content.ts`.
@@ -23,7 +23,7 @@ redes sociais e a relação do site com Ponto, Controle, Laboratório e `aevias-
 | `/` | Home |
 | `/afirma-evias` | A empresa (linha do tempo 2002 → 2016 → 2024 → hoje) |
 | `/servicos` | Serviços (8 áreas de atuação com índice fixo) |
-| `/aplicativo` | Aplicativo Afirma E-vias |
+| `/aplicativo` | Aplicativo Afirma Evias |
 | `/acreditacao-e-certificacao` | ISO 9001, política da qualidade, missão/visão/valores, comunicado 17025 |
 | `/programa-de-integridade` | Compliance, canal externo e canal de relato direto |
 | `/trabalhe-com-a-gente` | Envio de currículo |

@@ -84,6 +84,6 @@ pessoas da equipe com conta no painel, não visitantes. A política publicada j�
 diz que acessos da equipe ao painel ficam até 12 meses na trilha do painel; este
 registro é mais curto e mais restrito, por isso o texto público não mudou.
 
-`config.versaoPolitica` registra `2026-10-20` nas escolhas de cookies. O texto
-publicado tem versão editorial `1.1`, atualizado em 20/10/2026. Ao mudar a política,
+`config.versaoPolitica` registra `2026-11-27` nas escolhas de cookies. O texto
+publicado tem versão editorial `1.3`, atualizado em 27/11/2026. Ao mudar a política,
 conferir também a versão registrada, as regras de retenção e os testes.

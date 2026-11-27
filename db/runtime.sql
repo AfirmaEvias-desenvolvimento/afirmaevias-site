@@ -1,4 +1,4 @@
--- Afirma E-vias | privilégios do papel de RUNTIME do site (site_app), aplicados pelo `node dist/migrate.js --runtime`.
+-- Afirma Evias | privilégios do papel de RUNTIME do site (site_app), aplicados pelo `node dist/migrate.js --runtime`.
 -- Roda como o DONO do banco (o mesmo que aplica db/schema.sql), logo depois do schema, a cada deploy: idempotente.
 -- O site_app só faz DML: sem superusuário, sem CREATE no schema, sem ser dono de tabela. O papel é criado antes, à mão
 -- (SQL do RAILWAY-PRONTO.md), com a senha que fica só no Postgres; aqui nada de senha.

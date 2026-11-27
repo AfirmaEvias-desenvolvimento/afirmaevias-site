@@ -1,4 +1,4 @@
-# Documentação — Site Afirma E-vias
+# Documentação — Site Afirma Evias
 
 A referência técnica está em [Arquitetura do sistema](arquitetura/README.md).
 Ela descreve a implementação do site institucional e a relação com serviços

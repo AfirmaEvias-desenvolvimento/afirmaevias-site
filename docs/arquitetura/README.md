@@ -1,4 +1,4 @@
-# Site Afirma E-vias — Arquitetura do sistema
+# Site Afirma Evias — Arquitetura do sistema
 
 > Para desenvolvedores, revisores e quem opera o ambiente.
 > Conferido com o código em **21/10/2026**. Descreve o checkout local;
@@ -6,7 +6,7 @@
 
 ## O que é o sistema
 
-O site apresenta a empresa, os serviços e os aplicativos da Afirma E-vias.
+O site apresenta a empresa, os serviços e os aplicativos da Afirma Evias.
 Recebe contatos comerciais, currículos, relatos de integridade e pedidos de
 titulares de dados. A equipe atende esses registros pelo painel `/admin`.
 

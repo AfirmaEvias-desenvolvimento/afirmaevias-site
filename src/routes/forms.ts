@@ -41,8 +41,8 @@ export async function rotasFormularios(app: FastifyInstance) {
 
     if (erros.length > 0) {
       return reply.code(400).view(pagina, {
-        titulo: 'Contato | Afirma E-vias',
-        descricao: 'Fale com a Afirma E-vias.',
+        titulo: 'Contato | Afirma Evias',
+        descricao: 'Fale com a Afirma Evias.',
         rotaAtual: '/contato',
         enviado: false,
         erros,
@@ -84,8 +84,8 @@ export async function rotasFormularios(app: FastifyInstance) {
 
 
     return reply.view(pagina, {
-      titulo: 'Mensagem enviada | Afirma E-vias',
-      descricao: 'Fale com a Afirma E-vias.',
+      titulo: 'Mensagem enviada | Afirma Evias',
+      descricao: 'Fale com a Afirma Evias.',
       rotaAtual: '/contato',
       enviado: true,
       erros: [],
@@ -150,7 +150,7 @@ export async function rotasFormularios(app: FastifyInstance) {
 
     if (erros.length > 0) {
       return reply.code(400).view('pages/vagas', {
-        titulo: 'Trabalhe com a gente | Afirma E-vias',
+        titulo: 'Trabalhe com a gente | Afirma Evias',
         descricao: 'Envie seu currículo.',
         rotaAtual: '/trabalhe-com-a-gente',
         vagas: conteudo.vagas,
@@ -182,7 +182,7 @@ export async function rotasFormularios(app: FastifyInstance) {
 
 
     return reply.view('pages/vagas', {
-      titulo: 'Currículo recebido | Afirma E-vias',
+      titulo: 'Currículo recebido | Afirma Evias',
       descricao: 'Envie seu currículo.',
       rotaAtual: '/trabalhe-com-a-gente',
       vagas: conteudo.vagas,
@@ -212,7 +212,7 @@ export async function rotasFormularios(app: FastifyInstance) {
 
     if (erros.length > 0) {
       return reply.code(400).view('pages/integridade', {
-        titulo: 'Programa de integridade | Afirma E-vias',
+        titulo: 'Programa de integridade | Afirma Evias',
         descricao: 'Compliance e canal de denúncias.',
         rotaAtual: '/programa-de-integridade',
         integridade: conteudo.integridade,
@@ -232,7 +232,7 @@ export async function rotasFormularios(app: FastifyInstance) {
 
 
     return reply.view('pages/integridade', {
-      titulo: 'Relato registrado | Afirma E-vias',
+      titulo: 'Relato registrado | Afirma Evias',
       descricao: 'Compliance e canal de denúncias.',
       rotaAtual: '/programa-de-integridade',
       integridade: conteudo.integridade,
@@ -264,7 +264,7 @@ export async function rotasFormularios(app: FastifyInstance) {
 
     if (erros.length > 0) {
       return reply.code(400).view('pages/lgpd', {
-        titulo: 'Portal do titular | Afirma E-vias',
+        titulo: 'Portal do titular | Afirma Evias',
         descricao: 'Exerça seus direitos previstos na LGPD.',
         rotaAtual: '/portal-do-titular',
         tipos: conteudo.tiposSolicitacaoLgpd,
@@ -284,7 +284,7 @@ export async function rotasFormularios(app: FastifyInstance) {
 
 
     return reply.view('pages/lgpd', {
-      titulo: 'Solicitação registrada | Afirma E-vias',
+      titulo: 'Solicitação registrada | Afirma Evias',
       descricao: 'Exerça seus direitos previstos na LGPD.',
       rotaAtual: '/portal-do-titular',
       tipos: conteudo.tiposSolicitacaoLgpd,
@@ -340,7 +340,7 @@ export async function rotasFormularios(app: FastifyInstance) {
     }
 
     return reply.view('pages/protocolo', {
-      titulo: `Protocolo ${codigo} | Afirma E-vias`,
+      titulo: `Protocolo ${codigo} | Afirma Evias`,
       descricao: 'Acompanhe o andamento do seu protocolo.',
       rotaAtual: '',
       codigo,

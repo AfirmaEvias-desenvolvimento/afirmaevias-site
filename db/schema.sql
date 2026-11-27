@@ -1,4 +1,4 @@
--- Afirma E-vias | schema do site institucional
+-- Afirma Evias | schema do site institucional
 -- Executado de forma idempotente pelo src/migrate.ts a cada deploy.
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;

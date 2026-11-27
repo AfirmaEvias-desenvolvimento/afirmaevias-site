@@ -4,8 +4,8 @@ export { pecas } from './extra.js';
 // Trocar copy = editar este arquivo e redeployar.
 
 export const empresa = {
-  nome: 'Afirma E-vias',
-  razaoSocial: 'Afirma E-vias Engenharia Viária Ltda.',
+  nome: 'Afirma Evias',
+  razaoSocial: 'Afirma Evias Engenharia Viária Ltda.',
   cnpj: '05.205.684/0001-81',
   assinatura: 'engenharia viária',
   telefoneCelular: '(41) 98713-7780',
@@ -129,7 +129,7 @@ export const sobre = {
     },
     {
       ano: '2016',
-      titulo: 'Nasce a E-vias',
+      titulo: 'Nasce a Evias',
       texto:
         'Criada em Curitiba/PR, conquistou reconhecimento pela excelência nos ensaios laboratoriais e no controle de qualidade de materiais, com destaque para sua estrutura moderna e laboratórios móveis. Especializou-se em pavimentação asfáltica e tecnologia aplicada à engenharia viária.'
     },
@@ -137,7 +137,7 @@ export const sobre = {
       ano: '2024',
       titulo: 'A fusão',
       texto:
-        'Em dezembro de 2024 as duas trajetórias se consolidam na Afirma E-vias, unificando forças, equipes e propósitos. A integração ampliou a capacidade operacional e técnica: rede de laboratórios móveis, laboratório central de alta performance e presença em diferentes estados.'
+        'Em dezembro de 2024 as duas trajetórias se consolidam na Afirma Evias, unificando forças, equipes e propósitos. A integração ampliou a capacidade operacional e técnica: rede de laboratórios móveis, laboratório central de alta performance e presença em diferentes estados.'
     },
     {
       ano: 'Hoje',
@@ -153,7 +153,7 @@ export const servicos = [
     id: 'supervisao',
     titulo: 'Supervisão e controle tecnológico de obras',
     resumo:
-      'Garantimos o cumprimento de normas e a qualidade das obras por meio de supervisão e gestão especializadas. Nossa infraestrutura combina laboratórios de alta precisão e o aplicativo exclusivo Afirma E-vias para controle em tempo real.',
+      'Garantimos o cumprimento de normas e a qualidade das obras por meio de supervisão e gestão especializadas. Nossa infraestrutura combina laboratórios de alta precisão e o aplicativo exclusivo Afirma Evias para controle em tempo real.',
     itens: [
       'Planejamento, programação e controle da execução dos serviços',
       'Controle tecnológico e geométrico e realização de ensaios geotécnicos e de materiais',
@@ -295,7 +295,7 @@ export const servicos = [
 ];
 
 export const aplicativo = {
-  eyebrow: 'Aplicativo Afirma E-vias',
+  eyebrow: 'Aplicativo Afirma Evias',
   titulo: 'Conectando campo<br>e escritório.',
   chamada:
     'Inovação é o pilar para transformar a forma como a engenharia viária é planejada, executada e monitorada. Nosso aplicativo integra profissionais de campo, backoffice e clientes com transparência e agilidade.',
@@ -447,7 +447,7 @@ export const acreditacao = {
     linkRotulo: 'Certificado de registro (PDF)'
   },
   politicaQualidade:
-    'A Afirma E-vias está comprometida em fornecer soluções de engenharia, controle tecnológico e ensaios laboratoriais com imparcialidade e competência técnica. Buscamos sempre a satisfação dos clientes, atendendo aos requisitos aplicáveis das partes interessadas por meio do cumprimento das normas ABNT NBR ISO/IEC 17025 e ABNT NBR ISO 9001, garantindo uma operação consistente.',
+    'A Afirma Evias está comprometida em fornecer soluções de engenharia, controle tecnológico e ensaios laboratoriais com imparcialidade e competência técnica. Buscamos sempre a satisfação dos clientes, atendendo aos requisitos aplicáveis das partes interessadas por meio do cumprimento das normas ABNT NBR ISO/IEC 17025 e ABNT NBR ISO 9001, garantindo uma operação consistente.',
   politicaQualidadeNota:
     'Nota: a acreditação ISO/IEC 17025 encontra-se temporariamente suspensa em razão da mudança de endereço. O Sistema de Gestão da Qualidade segue integralmente aplicado. Veja o comunicado completo ao final desta página.',
   missao:
@@ -466,7 +466,7 @@ export const acreditacao = {
   comunicado17025: {
     titulo: 'ISO/IEC 17025 — comunicado aos clientes e parceiros',
     paragrafos: [
-      'A Afirma E-vias informa que está em processo de mudança para um novo endereço, visando a modernização de nossas instalações e a contínua melhoria do atendimento.',
+      'A Afirma Evias informa que está em processo de mudança para um novo endereço, visando a modernização de nossas instalações e a contínua melhoria do atendimento.',
       'Em conformidade com os requisitos da CGCRE (Inmetro) e da norma ABNT NBR ISO/IEC 17025, nossa acreditação encontra-se temporariamente suspensa em virtude da alteração de endereço físico, aguardando a avaliação técnica das novas instalações pelo órgão acreditador.'
     ],
     durante: [
@@ -532,17 +532,18 @@ export const vagas = {
 
 // -------------------------------------------------------------------- LGPD
 // TEXTO PROPOSTO, REVISAR COM O JURÍDICO (versão 1.2, 06/11/2026): acrescenta o compartilhamento do contato/orçamento com o
-// sistema comercial da própria Afirma E-vias (conexão 1 do hipersistema). A data abaixo e config.versaoPolitica
+// sistema comercial da própria Afirma Evias (conexão 1 do hipersistema). Versão 1.3 (27/11/2026): só corrige a grafia da
+// marca para "Afirma Evias", sem hífen (decisão do dono); nenhuma regra de tratamento mudou. A data abaixo e config.versaoPolitica
 // (AAAA-MM-DD) andam juntas: o teste comercial-privacidade.test.ts cobra a correspondência, porque é config.versaoPolitica
 // que vai como privacy_version no lead entregue ao Comercial e como versão do consentimento de cookies.
 export const privacidade = {
-  atualizadoEm: '6 de novembro de 2026',
-  versao: '1.2',
+  atualizadoEm: '27 de novembro de 2026',
+  versao: '1.3',
   secoes: [
     {
       titulo: 'Quem somos e a quem esta política se aplica',
       paragrafos: [
-        'A Afirma E-vias Engenharia Viária Ltda., inscrita no CNPJ sob o nº 05.205.684/0001-81, com sede na R. Baltazar Carrasco dos Reis, 2345, Rebouças, Curitiba/PR, é a controladora dos dados pessoais tratados por meio deste site, nos termos da Lei nº 13.709/2018 (Lei Geral de Proteção de Dados Pessoais — LGPD).',
+        'A Afirma Evias Engenharia Viária Ltda., inscrita no CNPJ sob o nº 05.205.684/0001-81, com sede na R. Baltazar Carrasco dos Reis, 2345, Rebouças, Curitiba/PR, é a controladora dos dados pessoais tratados por meio deste site, nos termos da Lei nº 13.709/2018 (Lei Geral de Proteção de Dados Pessoais — LGPD).',
         'Esta política se aplica a qualquer pessoa que acesse www.afirmaevias.com.br, preencha um de nossos formulários ou se comunique conosco pelos canais aqui indicados. Ela não se aplica a sistemas internos de clientes, que possuem contratos e políticas próprias.'
       ]
     },
@@ -577,9 +578,9 @@ export const privacidade = {
       ]
     },
     {
-      titulo: 'Seu pedido de contato ou de orçamento e o sistema comercial da Afirma E-vias',
+      titulo: 'Seu pedido de contato ou de orçamento e o sistema comercial da Afirma Evias',
       paragrafos: [
-        'Quando você envia o formulário de contato ou de orçamento, os dados que você preencheu — nome, e-mail, telefone, empresa, CNPJ, assunto e mensagem — ficam registrados neste site e são enviados, de forma protegida, ao sistema comercial da própria Afirma E-vias, para que nossa equipe comercial atenda a sua solicitação e elabore a proposta. Esse sistema pertence à Afirma E-vias, que continua sendo a controladora desses dados: não se trata de envio a outra empresa.',
+        'Quando você envia o formulário de contato ou de orçamento, os dados que você preencheu — nome, e-mail, telefone, empresa, CNPJ, assunto e mensagem — ficam registrados neste site e são enviados, de forma protegida, ao sistema comercial da própria Afirma Evias, para que nossa equipe comercial atenda a sua solicitação e elabore a proposta. Esse sistema pertence à Afirma Evias, que continua sendo a controladora desses dados: não se trata de envio a outra empresa.',
         'Usamos esses dados somente para essa finalidade (responder o seu pedido, esclarecer o escopo e preparar a proposta) e para registrar o histórico do atendimento. A base legal é a execução de procedimentos preliminares relacionados a contrato, a pedido do titular (art. 7º, V). Não usamos esses dados para publicidade de terceiros nem os vendemos.',
         'No sistema comercial, o seu pedido é guardado pelo mesmo prazo de 24 meses aplicado neste site, contado do recebimento do formulário. Se o pedido evoluir para uma proposta ou um contrato, os dados passam a ser tratados também para a execução desse contrato e para o cumprimento das obrigações legais dele, com os prazos próprios que a lei exige.',
         'Você pode pedir acesso, correção, eliminação, oposição ou qualquer outro direito do art. 18 pelo Portal do titular. O pedido de eliminação alcança também a cópia mantida no sistema comercial: nossa equipe providencia a eliminação nos dois lugares, ressalvados os dados que precisemos manter por obrigação legal ou para o exercício regular de direitos em contrato já firmado.'
@@ -588,7 +589,7 @@ export const privacidade = {
     {
       titulo: 'Por que tratamos seus dados e com qual base legal',
       lista: [
-        'Responder contatos comerciais e enviar propostas, o que inclui registrar o pedido no sistema comercial da Afirma E-vias — execução de procedimentos preliminares a contrato (art. 7º, V).',
+        'Responder contatos comerciais e enviar propostas, o que inclui registrar o pedido no sistema comercial da Afirma Evias — execução de procedimentos preliminares a contrato (art. 7º, V).',
         'Avaliar candidaturas em processos seletivos — execução de procedimentos preliminares a contrato (art. 7º, V).',
         'Atender requisições de titulares e comprovar conformidade — cumprimento de obrigação legal (art. 7º, II).',
         'Apurar relatos de integridade — legítimo interesse na manutenção do programa de compliance (art. 7º, IX).',
@@ -599,14 +600,14 @@ export const privacidade = {
     {
       titulo: 'Com quem compartilhamos',
       paragrafos: [
-        'Não vendemos dados pessoais. Dentro da própria Afirma E-vias, o contato e o pedido de orçamento seguem para o sistema comercial da empresa, como explicado acima. Fora dela, compartilhamos apenas o necessário com: provedores de infraestrutura e hospedagem que operam sob contrato de tratamento (hoje, a Railway, que hospeda o site e o banco de dados, e a Resend, que entrega os avisos por e-mail à nossa equipe — esses avisos informam que chegou uma mensagem, mas não trazem o conteúdo dela); a empresa independente que opera nosso canal de denúncias; e autoridades públicas, quando houver requisição legal.',
+        'Não vendemos dados pessoais. Dentro da própria Afirma Evias, o contato e o pedido de orçamento seguem para o sistema comercial da empresa, como explicado acima. Fora dela, compartilhamos apenas o necessário com: provedores de infraestrutura e hospedagem que operam sob contrato de tratamento (hoje, a Railway, que hospeda o site e o banco de dados, e a Resend, que entrega os avisos por e-mail à nossa equipe — esses avisos informam que chegou uma mensagem, mas não trazem o conteúdo dela); a empresa independente que opera nosso canal de denúncias; e autoridades públicas, quando houver requisição legal.',
         'Nossos servidores de aplicação e banco de dados podem estar localizados fora do Brasil. Nessas hipóteses, a transferência internacional observa o art. 33 da LGPD e é acompanhada de cláusulas contratuais de proteção.'
       ]
     },
     {
       titulo: 'Por quanto tempo guardamos',
       lista: [
-        'Contatos comerciais: 24 meses contados do recebimento do formulário, também na cópia mantida no sistema comercial da Afirma E-vias (se o pedido virar proposta ou contrato, valem ainda os prazos próprios do contrato e das obrigações legais).',
+        'Contatos comerciais: 24 meses contados do recebimento do formulário, também na cópia mantida no sistema comercial da Afirma Evias (se o pedido virar proposta ou contrato, valem ainda os prazos próprios do contrato e das obrigações legais).',
         'Currículos: 12 meses, salvo se você pedir a exclusão antes.',
         'Requisições de titular e registros de consentimento: 5 anos, para prova de conformidade.',
         'Relatos de integridade: pelo prazo da apuração e mais 5 anos.',
@@ -672,19 +673,19 @@ export const tiposSolicitacaoLgpd = [
 ];
 
 export const termos = {
-  atualizadoEm: '25 de agosto de 2026',
+  atualizadoEm: '27 de novembro de 2026', // 27/11/2026: só a grafia da marca ("Afirma Evias", sem hífen)
   secoes: [
     {
       titulo: 'Uso do site',
       paragrafos: [
-        'Este site é mantido pela Afirma E-vias para apresentar a empresa, seus serviços e canais de relacionamento. Ao navegar, você concorda com estes termos e com a Política de Privacidade.',
+        'Este site é mantido pela Afirma Evias para apresentar a empresa, seus serviços e canais de relacionamento. Ao navegar, você concorda com estes termos e com a Política de Privacidade.',
         'É vedado usar o site para fins ilícitos, tentar obter acesso não autorizado a áreas restritas, ou aplicar mecanismos automatizados que degradem a disponibilidade do serviço.'
       ]
     },
     {
       titulo: 'Conteúdo e propriedade intelectual',
       paragrafos: [
-        'Marca, logotipo, textos, imagens e materiais técnicos publicados aqui pertencem à Afirma E-vias ou a seus licenciadores. A reprodução depende de autorização prévia por escrito.',
+        'Marca, logotipo, textos, imagens e materiais técnicos publicados aqui pertencem à Afirma Evias ou a seus licenciadores. A reprodução depende de autorização prévia por escrito.',
         'Informações técnicas divulgadas neste site têm caráter institucional e não substituem projeto, laudo ou parecer específico assinado por profissional habilitado.'
       ]
     },

@@ -1,4 +1,4 @@
-# Sistema Site Institucional (Afirma E-vias): documentação completa
+# Sistema Site Institucional (Afirma Evias): documentação completa
 
 Documento de referência para o dono do projeto e para engenheiros novos. Escrito em 13/11/2026 a partir da leitura do
 código deste repositório (`src/`, `db/schema.sql`, `src/views/`, `README.md`, `docs/`) e de `aevias-auth/ecossistema`.
@@ -11,7 +11,7 @@ Documentos relacionados: [feed-rh-institucional.md](feed-rh-institucional.md) (f
 
 ## 1. Propósito e escopo
 
-Site público institucional da Afirma E-vias (engenharia, laboratório e controle tecnológico), sem WordPress nem CMS: o
+Site público institucional da Afirma Evias (engenharia, laboratório e controle tecnológico), sem WordPress nem CMS: o
 conteúdo mora em `src/content.ts`. Além de páginas estáticas, ele **recebe dados de terceiros** por formulários e, por
 isso, carrega as obrigações de LGPD do sistema.
 
@@ -283,7 +283,7 @@ Conexão 1 do hipersistema, detalhada em [conexao-1-comercial.md](conexao-1-come
   dado pessoal (testes cobrem as colunas); lead ao Comercial só com os campos do contrato; o detalhe do painel não carrega
   a coluna binária do currículo (consulta exclui `bytea`); IP/user-agent zerados aos 6 meses; consentimento de cookies grava
   apenas hash do IP.
-- **Aviso de privacidade**: `config.versaoPolitica` = `2026-11-06` (política v1.2 em `content.ts`, marcada como **texto
+- **Aviso de privacidade**: `config.versaoPolitica` = `2026-11-27` (política v1.3 em `content.ts`; a 1.3 só corrigiu a grafia "Afirma Evias", marcada como **texto
   proposto, a revisar com o jurídico**). A mesma versão vai como `privacy_version` no lead e na prova de consentimento de
   cookies; teste cobra a correspondência. Aceite obrigatório em contato e currículo; confirmação de titularidade no portal.
 - **Auditoria** (`audit.ts`, tabela `auditoria`): login ok/falhou/freado, logout, registro atualizado/excluído, currículo

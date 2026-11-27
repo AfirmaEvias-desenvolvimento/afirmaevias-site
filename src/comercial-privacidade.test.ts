@@ -21,7 +21,7 @@ function iso(data: string) {
   return `${m![3]}-${String(MESES.indexOf(m![2]) + 1).padStart(2, '0')}-${m![1].padStart(2, '0')}`;
 }
 
-test('a política cita o compartilhamento do contato com o sistema comercial da própria Afirma E-vias', () => {
+test('a política cita o compartilhamento do contato com o sistema comercial da própria Afirma Evias', () => {
   const secao = privacidade.secoes.find((s) => /sistema comercial/i.test(s.titulo));
   assert.ok(secao, 'falta a seção sobre o sistema comercial');
   const texto = (secao!.paragrafos ?? []).join(' ');
@@ -38,14 +38,15 @@ test('a política cita o compartilhamento do contato com o sistema comercial da 
 
 test('a política lista o CNPJ entre os dados coletados e manda o pedido para o sistema comercial na base legal e nos prazos', () => {
   assert.match(textoPolitica, /CNPJ \(opcional\)/);
-  assert.match(textoPolitica, /registrar o pedido no sistema comercial da Afirma E-vias/);
+  assert.match(textoPolitica, /registrar o pedido no sistema comercial da Afirma Evias/);
   assert.match(textoPolitica, /Contatos comerciais: 24 meses contados do recebimento do formulário, também na cópia mantida no sistema comercial/);
 });
 
-test('versão do aviso: subiu para 1.2 e a versão enviada ao Comercial (privacy_version) é a mesma data', () => {
-  assert.equal(privacidade.versao, '1.2');
+test('versão do aviso: subiu para 1.3 (grafia "Afirma Evias") e a versão enviada ao Comercial (privacy_version) é a mesma data', () => {
+  assert.equal(privacidade.versao, '1.3');
   assert.equal(config.versaoPolitica, iso(privacidade.atualizadoEm), 'config.versaoPolitica e content.privacidade.atualizadoEm divergem');
-  assert.notEqual(config.versaoPolitica, '2026-10-20', 'a versão anterior não pode continuar valendo para o texto novo');
+  for (const anterior of ['2026-10-20', '2026-11-06']) assert.notEqual(config.versaoPolitica, anterior, 'a versão anterior não pode continuar valendo para o texto novo');
+  assert.doesNotMatch(textoPolitica, /E-vias/i, 'a política ainda cita a grafia antiga da marca');
   const corpo = montarCorpoLead({ nome: 'Maria', email: 'm@exemplo.test', mensagem: 'x' }, config.versaoPolitica);
   assert.equal(corpo.privacy_version, config.versaoPolitica);
 });

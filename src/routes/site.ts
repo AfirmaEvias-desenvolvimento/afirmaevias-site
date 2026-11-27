@@ -5,7 +5,7 @@ import { config } from '../config.js';
 export async function rotasSite(app: FastifyInstance) {
   app.get('/', async (_req, reply) =>
     reply.view('pages/home', {
-      titulo: 'Afirma E-vias | Engenharia viária',
+      titulo: 'Afirma Evias | Engenharia viária',
       descricao:
         'Estudos, projetos, supervisão e controle tecnológico de obras rodoviárias e urbanas. Mais de 20 anos de tradição e inovação.',
       rotaAtual: '/',
@@ -20,9 +20,9 @@ export async function rotasSite(app: FastifyInstance) {
 
   app.get('/afirma-evias', async (_req, reply) =>
     reply.view('pages/sobre', {
-      titulo: 'A empresa | Afirma E-vias',
+      titulo: 'A empresa | Afirma Evias',
       descricao:
-        'A história da Afirma E-vias: a união da Afirma Engenharia (2002) com a E-vias (2016), consolidada na fusão de 2024.',
+        'A história da Afirma Evias: a união da Afirma Engenharia (2002) com a Evias (2016), consolidada na fusão de 2024.',
       rotaAtual: '/afirma-evias',
       sobre: conteudo.sobre,
       indicadores: conteudo.indicadores
@@ -31,7 +31,7 @@ export async function rotasSite(app: FastifyInstance) {
 
   app.get('/servicos', async (_req, reply) =>
     reply.view('pages/servicos', {
-      titulo: 'Serviços | Afirma E-vias',
+      titulo: 'Serviços | Afirma Evias',
       descricao:
         'Supervisão e controle tecnológico, projetos em BIM, consultoria, laboratórios fixos e móveis, sondagens, ensaios e levantamentos.',
       rotaAtual: '/servicos',
@@ -42,9 +42,9 @@ export async function rotasSite(app: FastifyInstance) {
 
   app.get('/aplicativo', async (_req, reply) =>
     reply.view('pages/aplicativo', {
-      titulo: 'Aplicativo | Afirma E-vias',
+      titulo: 'Aplicativo | Afirma Evias',
       descricao:
-        'O app Afirma E-vias conecta campo e escritório: ensaios georreferenciados, alertas de não conformidade e dashboards analíticos.',
+        'O app Afirma Evias conecta campo e escritório: ensaios georreferenciados, alertas de não conformidade e dashboards analíticos.',
       rotaAtual: '/aplicativo',
       aplicativo: conteudo.aplicativo,
       telasVitrine: conteudo.telasVitrine
@@ -53,7 +53,7 @@ export async function rotasSite(app: FastifyInstance) {
 
   app.get('/acreditacao-e-certificacao', async (_req, reply) =>
     reply.view('pages/acreditacao', {
-      titulo: 'Acreditação e certificação | Afirma E-vias',
+      titulo: 'Acreditação e certificação | Afirma Evias',
       descricao:
         'ISO 9001, política da qualidade, missão, visão, valores e comunicado sobre a acreditação ISO/IEC 17025.',
       rotaAtual: '/acreditacao-e-certificacao',
@@ -63,7 +63,7 @@ export async function rotasSite(app: FastifyInstance) {
 
   app.get('/programa-de-integridade', async (_req, reply) =>
     reply.view('pages/integridade', {
-      titulo: 'Programa de integridade | Afirma E-vias',
+      titulo: 'Programa de integridade | Afirma Evias',
       descricao:
         'Compliance, Código de Ética e Conduta e canal de denúncias anônimo e seguro operado por empresa independente.',
       rotaAtual: '/programa-de-integridade',
@@ -77,9 +77,9 @@ export async function rotasSite(app: FastifyInstance) {
 
   app.get('/trabalhe-com-a-gente', async (_req, reply) =>
     reply.view('pages/vagas', {
-      titulo: 'Trabalhe com a gente | Afirma E-vias',
+      titulo: 'Trabalhe com a gente | Afirma Evias',
       descricao:
-        'Vagas em engenharia de projetos, supervisão de obras, laboratório, topografia e BIM. Envie seu currículo para a Afirma E-vias — guardamos por 12 meses e avaliamos cada envio.',
+        'Vagas em engenharia de projetos, supervisão de obras, laboratório, topografia e BIM. Envie seu currículo para a Afirma Evias — guardamos por 12 meses e avaliamos cada envio.',
       rotaAtual: '/trabalhe-com-a-gente',
       vagas: conteudo.vagas,
       enviado: false,
@@ -90,9 +90,9 @@ export async function rotasSite(app: FastifyInstance) {
 
   app.get('/contato', async (_req, reply) =>
     reply.view('pages/contato', {
-      titulo: 'Contato | Afirma E-vias',
+      titulo: 'Contato | Afirma Evias',
       descricao:
-        'Fale com a Afirma E-vias sobre controle tecnológico, projetos viários, sondagens ou laboratório. Escritórios em Curitiba/PR e Marília/SP, com atendimento por telefone, WhatsApp e formulário.',
+        'Fale com a Afirma Evias sobre controle tecnológico, projetos viários, sondagens ou laboratório. Escritórios em Curitiba/PR e Marília/SP, com atendimento por telefone, WhatsApp e formulário.',
       rotaAtual: '/contato',
       enviado: false,
       erros: [],
@@ -102,8 +102,8 @@ export async function rotasSite(app: FastifyInstance) {
 
   app.get('/politica-de-privacidade', async (_req, reply) =>
     reply.view('pages/privacidade', {
-      titulo: 'Política de privacidade | Afirma E-vias',
-      descricao: 'Como a Afirma E-vias trata dados pessoais, nos termos da LGPD (Lei 13.709/2018).',
+      titulo: 'Política de privacidade | Afirma Evias',
+      descricao: 'Como a Afirma Evias trata dados pessoais, nos termos da LGPD (Lei 13.709/2018).',
       rotaAtual: '/politica-de-privacidade',
       privacidade: conteudo.privacidade,
       cookies: conteudo.cookies
@@ -112,9 +112,9 @@ export async function rotasSite(app: FastifyInstance) {
 
   app.get('/termos-de-uso', async (_req, reply) =>
     reply.view('pages/termos', {
-      titulo: 'Termos de uso | Afirma E-vias',
+      titulo: 'Termos de uso | Afirma Evias',
       descricao:
-        'Condições de uso do site da Afirma E-vias: responsabilidades, propriedade intelectual, uso dos formulários e canais oficiais de atendimento.',
+        'Condições de uso do site da Afirma Evias: responsabilidades, propriedade intelectual, uso dos formulários e canais oficiais de atendimento.',
       rotaAtual: '/termos-de-uso',
       termos: conteudo.termos
     })
@@ -122,7 +122,7 @@ export async function rotasSite(app: FastifyInstance) {
 
   app.get('/portal-do-titular', async (_req, reply) =>
     reply.view('pages/lgpd', {
-      titulo: 'Portal do titular | Afirma E-vias',
+      titulo: 'Portal do titular | Afirma Evias',
       descricao:
         'Exerça seus direitos de titular de dados pessoais previstos no art. 18 da LGPD. Resposta em até 15 dias com protocolo.',
       rotaAtual: '/portal-do-titular',
@@ -136,7 +136,7 @@ export async function rotasSite(app: FastifyInstance) {
 
   app.get('/bruno_magalhaes', async (_req, reply) =>
     reply.view('pages/extra', {
-      titulo: 'Bruno Magalhães | Afirma E-vias',
+      titulo: 'Bruno Magalhães | Afirma Evias',
       descricao: '',
       rotaAtual: '/bruno_magalhaes',
       naoIndexar: true,
@@ -146,9 +146,9 @@ export async function rotasSite(app: FastifyInstance) {
 
   app.get('/acessibilidade', async (_req, reply) =>
     reply.view('pages/acessibilidade', {
-      titulo: 'Declaração de acessibilidade | Afirma E-vias',
+      titulo: 'Declaração de acessibilidade | Afirma Evias',
       descricao:
-        'O que foi verificado, o que ainda não foi e como relatar uma barreira de acessibilidade no site da Afirma E-vias.',
+        'O que foi verificado, o que ainda não foi e como relatar uma barreira de acessibilidade no site da Afirma Evias.',
       rotaAtual: '/acessibilidade',
       acessibilidade: conteudo.acessibilidade
     })

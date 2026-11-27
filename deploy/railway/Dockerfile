@@ -1,4 +1,4 @@
-# Site institucional (Afirma E-vias) no projeto Railway `aevias-hipersistema`: serviços `site` e `site-migrate`.
+# Site institucional (Afirma Evias) no projeto Railway `aevias-hipersistema`: serviços `site` e `site-migrate`.
 # Dockerfile Path: deploy/railway/Dockerfile   Contexto: raiz do repositório.   Veja RAILWAY-PRONTO.md.
 #   site:          node dist/server.js              (CMD da imagem; healthcheck /health/live no PORT)
 #   site-migrate:  node dist/migrate.js --runtime   (schema + GRANTs do site_app; Restart Never)
